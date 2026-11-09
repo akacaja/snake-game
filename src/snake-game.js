@@ -42,6 +42,7 @@ const TEXT_ATTRIBUTES = [
   ...PLURAL_FORMS.map((form) => `text-game-over-${form}`),
 ];
 
+// Node (the tests) has no HTMLElement; an empty class lets this file be imported there.
 const Base = typeof HTMLElement === 'undefined' ? class {} : HTMLElement;
 
 const clamp01 = (value) => Math.min(1, Math.max(0, value));
@@ -497,6 +498,7 @@ export class SnakeGameElement extends Base {
       speed: this._number('speed', 5, { min: 0.1 }),
       speedStep: this._number('speed-step', 0.3, { min: 0 }),
       maxSpeed: this._number('max-speed', 14, { min: 0.1 }),
+      // With reduced motion, the first game of each opening starts paused, so nothing moves before the player asks.
       startPaused: first && this._reduced,
     });
     this._engine = engine;
@@ -522,6 +524,7 @@ export class SnakeGameElement extends Base {
     on('step', ({ removedTail }) => {
       const now = performance.now();
       this._lastStep = now;
+      // Keep the tail cell that just left, so the drawing can shrink it out smoothly.
       this._ghost = removedTail ? { ...removedTail, time: now } : null;
     });
     on('eat', ({ score, length }) => {
@@ -548,6 +551,7 @@ export class SnakeGameElement extends Base {
       this._emit('snake-pause');
     });
     on('resume', () => {
+      // Restart the clock on resume, so the paused time does not count as a late step.
       this._nextStep = performance.now() + engine.getState().interval;
       this._updateUi();
       this._emit('snake-resume');
@@ -621,6 +625,7 @@ export class SnakeGameElement extends Base {
       engine.step();
       state = engine.getState();
       this._nextStep += state.interval;
+      // If the frame is more than one step late (background tab, slow device), reschedule instead of catching up with a run of fast steps.
       if (now - this._nextStep > state.interval) this._nextStep = now + state.interval;
     }
     this._draw(now, state);

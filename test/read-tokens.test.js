@@ -21,3 +21,7 @@ test('every token is declared in the theme CSS with a comment', () => {
     assert.ok(t.doc && t.doc.length > 5, `${t.name} needs a doc`);
   }
 });
+
+test('inline mode fills the width of its container', () => {
+  assert.match(themeCSS, /:host\(\[mode="inline"\]\)\s*\{[^}]*width:\s*100%/);
+});

@@ -54,7 +54,7 @@ Browser support: the modal uses the native `<dialog>` element, so you need a bro
 <snake-game mode="inline" open></snake-game>
 ```
 
-In inline mode the game takes the width of its container. Every time the game opens, a new game starts. If the container has no size yet (for example, it is hidden), the game starts on the first frame with a size, and `pause()` and `restart()` do nothing until then. Escape or the close button closes it.
+In inline mode the game fills the width of its container, also when the container is a flex or grid row (the tag gets `width: 100%`). To use another width, set it on the tag in your CSS, for example `snake-game { width: 480px; }`. Your rule wins over the default. Every time the game opens, a new game starts. If the container has no size yet (for example, it is hidden), the game starts on the first frame with a size, and `pause()` and `restart()` do nothing until then. Escape or the close button closes it.
 
 ## Attributes
 
@@ -121,6 +121,8 @@ All are `CustomEvent`s that bubble and cross the shadow DOM. Data is in `event.d
 | `snake-score` | `{ score, best }` |
 | `snake-gameover` | `{ score, best, reason }` with `reason` as `wall`, `self` or `full` |
 | `snake-pause`, `snake-resume`, `snake-restart` | none |
+
+Exception: if the element is removed from the page while the game is open, it still emits `snake-close`, but the element is already out of the page, so the event does not reach `document`. To catch that case, listen on the element itself.
 
 ## Looks: design tokens
 
