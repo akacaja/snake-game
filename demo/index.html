@@ -1,0 +1,253 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>snake-game: test page</title>
+  <style>
+    /* Styles of this test page only. The component itself is styled by src/theme.js. */
+    body { margin: 0; font: 15px/1.45 system-ui, sans-serif; color: #1a1a1a; background: #ffffff; }
+    main { display: grid; grid-template-columns: minmax(280px, 380px) minmax(0, 1fr); gap: 24px; padding: 16px; }
+    @media (max-width: 760px) { main { grid-template-columns: 1fr; } }
+    h1 { font-size: 20px; margin: 0 0 8px; }
+    h2 { font-size: 15px; margin: 20px 0 8px; }
+    fieldset { border: 1px solid #c8c8c8; border-radius: 8px; margin: 0 0 12px; padding: 8px 12px 12px; }
+    legend { font-weight: 600; padding: 0 4px; }
+    label { display: grid; grid-template-columns: 1fr 1.2fr; gap: 8px; align-items: center; margin: 6px 0; }
+    label.check { display: flex; gap: 8px; }
+    input[type="text"], input[type="number"], select { font: inherit; padding: 6px 8px; min-height: 36px; width: 100%; box-sizing: border-box; }
+    button { font: inherit; min-height: 44px; min-width: 44px; padding: 0 16px; cursor: pointer; }
+    .buttons { display: flex; gap: 8px; flex-wrap: wrap; }
+    #contrast-status { margin: 8px 0 0; font-weight: 600; }
+    #contrast-status.low { color: #9b1c1c; }
+    .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+    #stage { min-height: 200px; border: 1px dashed #c8c8c8; border-radius: 8px; padding: 12px; }
+    #log { max-height: 240px; overflow: auto; padding-left: 20px; font: 13px/1.4 ui-monospace, monospace; }
+    .hint { color: #4a4a4a; }
+  </style>
+</head>
+<body>
+  <main>
+    <section aria-label="Controls">
+      <h1>snake-game test page</h1>
+      <p class="hint">Type <kbd>snake</kbd> anywhere on this page to open the game (secret code).</p>
+      <div class="buttons">
+        <button type="button" id="btn-open">Open</button>
+        <button type="button" id="btn-pause">Pause</button>
+        <button type="button" id="btn-restart">Restart</button>
+      </div>
+
+      <fieldset>
+        <legend>Options (apply right away)</legend>
+        <div id="selects"></div>
+        <label class="check"><input type="checkbox" id="custom-renderer"> Custom snake renderer</label>
+      </fieldset>
+
+      <fieldset>
+        <legend>Apply on the next restart</legend>
+        <label class="check"><input type="checkbox" id="opt-wrap"> wrap (cross the walls)</label>
+        <label>cols <input type="number" id="opt-cols" min="2" placeholder="auto"></label>
+        <label>rows <input type="number" id="opt-rows" min="2" placeholder="auto"></label>
+        <label>speed <input type="number" id="opt-speed" min="1" step="0.5" placeholder="5"></label>
+      </fieldset>
+
+      <fieldset>
+        <legend>Language and texts</legend>
+        <label>lang
+          <select id="opt-lang"><option value="en">en</option><option value="pt-BR">pt-BR</option></select>
+        </label>
+        <label>text-game-over-one <input type="text" id="txt-one" placeholder="Game over, {score} point"></label>
+        <label>text-game-over-other <input type="text" id="txt-other" placeholder="Game over, {score} points"></label>
+      </fieldset>
+
+      <fieldset>
+        <legend>Tokens (--snake-*)</legend>
+        <div id="tokens"></div>
+        <p id="contrast-status"></p>
+        <div id="contrast-live" class="sr-only" role="status"></div>
+      </fieldset>
+    </section>
+
+    <section aria-label="Game and events">
+      <h2>Inline stage (used when mode is inline)</h2>
+      <div id="stage"><snake-game id="game"></snake-game></div>
+      <h2>Events</h2>
+      <ol id="log" aria-label="Event log"></ol>
+    </section>
+  </main>
+
+  <script type="module">
+    import './../src/snake-game.js';
+    import { contrastRatio } from './contrast.js';
+
+    const game = document.getElementById('game');
+    const $ = (id) => document.getElementById(id);
+
+    // ---- selects for the visual options ----
+    const SELECTS = {
+      mode: ['modal', 'inline'],
+      grid: ['dots', 'squares', 'lines', 'none'],
+      snake: ['taper', 'uniform'],
+      food: ['circle', 'square'],
+      'food-halo': ['soft', 'none'],
+      intro: ['wave', 'cascade', 'none'],
+      transitions: ['on', 'off'],
+    };
+    for (const [name, values] of Object.entries(SELECTS)) {
+      const label = document.createElement('label');
+      label.append(name);
+      const select = document.createElement('select');
+      for (const v of values) select.add(new Option(v, v));
+      select.addEventListener('change', () => {
+        game.setAttribute(name, select.value);
+        if (name === 'mode') updateContrast(true);
+      });
+      label.append(select);
+      $('selects').append(label);
+    }
+
+    // ---- token fields ----
+    const TOKEN_FIELDS = [
+      ['text-color', true], ['background', true], ['backdrop', true],
+      ['grid-color'], ['color'], ['food-color'], ['food-halo-color'],
+      ['spacing'], ['grid-dot-size'], ['head-size'], ['tail-size'], ['food-size'],
+      ['duration'], ['intro-duration'],
+    ];
+    const colorFields = [];
+    for (const [name, isContrast] of TOKEN_FIELDS) {
+      const label = document.createElement('label');
+      label.append(`--snake-${name}`);
+      const input = document.createElement('input');
+      input.type = 'text';
+      input.placeholder = getComputedStyle(game).getPropertyValue(`--_${name}`).trim();
+      if (isContrast) {
+        input.setAttribute('aria-describedby', 'contrast-status');
+        colorFields.push(input);
+      }
+      input.addEventListener('input', () => {
+        const value = input.value.trim();
+        if (value) game.style.setProperty(`--snake-${name}`, value);
+        else game.style.removeProperty(`--snake-${name}`);
+        if (isContrast) updateContrast(false);
+      });
+      label.append(input);
+      $('tokens').append(label);
+    }
+
+    // ---- attributes applied at restart ----
+    const bindAttr = (id, name, boolean) => {
+      $(id).addEventListener('input', () => {
+        const el = $(id);
+        if (boolean) el.checked ? game.setAttribute(name, '') : game.removeAttribute(name);
+        else el.value ? game.setAttribute(name, el.value) : game.removeAttribute(name);
+      });
+    };
+    bindAttr('opt-wrap', 'wrap', true);
+    bindAttr('opt-cols', 'cols');
+    bindAttr('opt-rows', 'rows');
+    bindAttr('opt-speed', 'speed');
+    bindAttr('txt-one', 'text-game-over-one');
+    bindAttr('txt-other', 'text-game-over-other');
+
+    $('opt-lang').addEventListener('change', (e) => {
+      const lang = e.target.value;
+      game.setAttribute('lang', lang);
+      const one = lang === 'pt-BR' ? 'Fim de jogo, {score} ponto' : '';
+      const other = lang === 'pt-BR' ? 'Fim de jogo, {score} pontos' : '';
+      for (const [id, value] of [['txt-one', one], ['txt-other', other]]) {
+        $(id).value = value;
+        $(id).dispatchEvent(new Event('input'));
+      }
+    });
+
+    // ---- custom renderer: outlined squares that only use tokens ----
+    const customSnake = (ctx, scene) => {
+      const { tokens, segments } = scene;
+      ctx.lineWidth = tokens.gridLineWidth * 2;
+      ctx.strokeStyle = tokens.color;
+      ctx.fillStyle = tokens.backdrop;
+      for (let i = segments.length - 1; i >= 0; i -= 1) {
+        const s = segments[i];
+        if (s.size <= 0) continue;
+        ctx.globalAlpha = s.opacity;
+        ctx.fillRect(s.cx - s.size / 2, s.cy - s.size / 2, s.size, s.size);
+        ctx.strokeRect(s.cx - s.size / 2, s.cy - s.size / 2, s.size, s.size);
+      }
+      ctx.globalAlpha = 1;
+    };
+    $('custom-renderer').addEventListener('change', (e) => {
+      game.renderers = e.target.checked ? { snake: customSnake } : {};
+    });
+
+    // ---- buttons and secret code ----
+    $('btn-open').addEventListener('click', () => game.open());
+    $('btn-pause').addEventListener('click', () => game.togglePause());
+    $('btn-restart').addEventListener('click', () => game.restart());
+
+    let typed = '';
+    document.addEventListener('keydown', (e) => {
+      if (game.isOpen || e.target.matches('input, select, textarea') || e.key.length !== 1) return;
+      typed = (typed + e.key.toLowerCase()).slice(-5);
+      if (typed === 'snake') { typed = ''; game.open(); }
+    });
+
+    // ---- event log ----
+    const log = $('log');
+    for (const type of ['open', 'close', 'eat', 'score', 'gameover', 'pause', 'resume', 'restart']) {
+      game.addEventListener(`snake-${type}`, (e) => {
+        const item = document.createElement('li');
+        item.textContent = `snake-${type} ${e.detail ? JSON.stringify(e.detail) : ''}`;
+        log.prepend(item);
+        while (log.children.length > 50) log.lastChild.remove();
+      });
+    }
+
+    // ---- contrast warning (text vs. effective background) ----
+    const canvas = document.createElement('canvas');
+    canvas.width = canvas.height = 1;
+    const c2d = canvas.getContext('2d', { willReadFrequently: true });
+    function pixel(layers) {
+      c2d.clearRect(0, 0, 1, 1);
+      c2d.fillStyle = '#ffffff';
+      c2d.fillRect(0, 0, 1, 1);
+      for (const color of layers) {
+        if (!CSS.supports('color', color)) continue;
+        c2d.fillStyle = color;
+        c2d.fillRect(0, 0, 1, 1);
+      }
+      const d = c2d.getImageData(0, 0, 1, 1).data;
+      return [d[0], d[1], d[2]];
+    }
+    const effective = (name) => getComputedStyle(game).getPropertyValue(`--_${name}`).trim();
+    let lastState = null;
+    function updateContrast(announce) {
+      const modal = (game.getAttribute('mode') || 'modal') === 'modal';
+      const page = getComputedStyle(document.body).backgroundColor;
+      const layers = [page, ...(modal ? [effective('backdrop')] : []), effective('background')];
+      const bg = pixel(layers);
+      const fg = pixel([...layers, effective('text-color')]);
+      const ratio = contrastRatio(bg, fg);
+      const low = ratio < 4.5;
+      const status = $('contrast-status');
+      status.classList.toggle('low', low);
+      status.textContent = '';
+      if (low) {
+        const icon = document.createElement('span');
+        icon.setAttribute('aria-hidden', 'true');
+        icon.textContent = '⚠ ';
+        status.append(icon, `Warning: low contrast (${ratio.toFixed(1)}:1). Text needs at least 4.5:1 to be easy to read.`);
+      } else {
+        status.textContent = `Text contrast: ${ratio.toFixed(1)}:1`;
+      }
+      const state = low ? 'low' : 'ok';
+      if (announce !== null && state !== lastState && lastState !== null) {
+        $('contrast-live').textContent = low
+          ? `Warning: low contrast, ${ratio.toFixed(1)} to 1.`
+          : `Contrast is ok, ${ratio.toFixed(1)} to 1.`;
+      }
+      lastState = state;
+    }
+    updateContrast(null);
+  </script>
+</body>
+</html>
