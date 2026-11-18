@@ -1,1 +1,4 @@
 .crew/
+.DS_Store
+# Local reference images, kept only on this computer (not published).
+context/prototype/

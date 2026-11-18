@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>snake-game</title>
+  <link rel="icon" href="demo/favicon.svg" type="image/svg+xml">
+  <!-- TEMPORARY: this page only sends visitors to the demo. It will be replaced by the project landing page (see CHANGELOG.md, Next steps). -->
+</head>
+<body>
+  <main>
+    <h1>snake-game</h1>
+    <p>Opening the demo… If nothing happens, <a id="demo-link" href="demo/">open the demo</a>.</p>
+  </main>
+  <script>
+    // Works with or without the trailing slash: /snake-game, /snake-game/ and /snake-game/index.html all go to /snake-game/demo/.
+    (function () {
+      var path = location.pathname.replace(/index\.html$/, '');
+      if (path.slice(-1) !== '/') path += '/';
+      var target = path + 'demo/' + location.search + location.hash;
+      var link = document.getElementById('demo-link');
+      if (link) link.href = target;
+      location.replace(target);
+    })();
+  </script>
+</body>
+</html>

@@ -34,19 +34,37 @@ test('the engine does not touch the browser or timers', () => {
   }
 });
 
-test('no third-party company names in the repository (outside .crew and test)', () => {
-  const names = /(?!)/i; // The list of names lives in a local file outside the repository.
-  const skip = new Set(['.git', '.crew', 'node_modules', 'test']);
+// The list of forbidden names lives in a local file that Git ignores, so the names
+// never appear in the repository. Without the file, this check is skipped (and says so).
+// FORBIDDEN_NAMES_FILE only exists to test this check with a copy of the list; normally it is not set.
+const LIST = process.env.FORBIDDEN_NAMES_FILE ? resolve(process.env.FORBIDDEN_NAMES_FILE) : join(root, '.crew/nomes-proibidos.txt');
+
+test('no forbidden names in the repository (list in .crew/nomes-proibidos.txt)', {
+  skip: existsSync(LIST) ? false : `forbidden-name list not found at ${relative(root, LIST)}: check SKIPPED`,
+}, () => {
+  // Keep the real line number of each pattern (comments and blank lines count), for the error message.
+  const entries = readFileSync(LIST, 'utf8').split('\n')
+    .map((text, i) => ({ text: text.trim(), line: i + 1 }))
+    .filter((e) => e.text && !e.text.startsWith('#'));
+  if (entries.length === 0) assert.fail('forbidden-name list is empty');
+  entries.forEach((e) => {
+    try { new RegExp(e.text, 'i'); } catch { assert.fail(`invalid pattern on line ${e.line} of the list`); }
+  });
+  const lines = entries.map((e) => e.text);
+  const names = new RegExp(lines.map((l) => '(?:' + l + ')').join('|'), 'i');
+  const skip = new Set(['.git', '.crew', 'node_modules']);
   const walk = (dir) => {
     for (const entry of readdirSync(dir)) {
       if (skip.has(entry) && dir === root) continue;
       const path = join(dir, entry);
       const rel = relative(root, path);
       assert.ok(!names.test(entry), `file name ${rel} contains a forbidden name`);
-      if (statSync(path).isDirectory()) walk(path);
-      else if (/\.(js|html|md|json|css|txt|svg)$/.test(entry) || !entry.includes('.')) {
-        assert.ok(!names.test(readFileSync(path, 'utf8')), `${rel} contains a forbidden name`);
-      }
+      if (statSync(path).isDirectory()) { walk(path); continue; }
+      const buf = readFileSync(path);
+      if (buf.includes(0)) continue; // binary (PNG, .DS_Store): not text
+      buf.toString('utf8').split('\n').forEach((line, i) => {
+        assert.ok(!names.test(line), `${rel}:${i + 1} contains a forbidden name`);
+      });
     }
   };
   walk(root);
@@ -70,10 +88,17 @@ test('the favicon uses the current snake and food colors from the theme', () => 
 });
 
 test('demo and module pages point rel="icon" to a file that exists', () => {
-  for (const page of ['demo/index.html', 'examples/module.html']) {
+  for (const page of ['demo/index.html', 'examples/module.html', 'index.html']) {
     const tag = read(page).match(/<link\b(?=[^>]*\brel="icon")[^>]*>/)?.[0];
     const href = tag?.match(/\bhref="([^"]+)"/)?.[1];
     assert.ok(href, `${page} has no rel="icon"`);
     assert.ok(existsSync(resolve(root, dirname(page), href)), `${page}: ${href} does not exist`);
   }
+});
+
+test('the temporary root page has no styles or literal colors/sizes', () => {
+  const html = read('index.html');
+  assert.ok(!/<style/i.test(html), 'index.html has a <style> tag');
+  assert.ok(!/\sstyle=/i.test(html), 'index.html has a style attribute');
+  for (const [re, what] of LITERALS) assert.ok(!re.test(html), `index.html has a ${what}`);
 });
