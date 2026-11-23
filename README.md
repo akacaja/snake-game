@@ -17,7 +17,7 @@ By default the game starts closed. The `open` attribute makes it open by itself,
 
 There are two ways. Pick one.
 
-**A. One file (works by double click, no server).** Copy `dist/snake-game.js` to your site and load it with a normal script tag. It registers `<snake-game>` and exposes a global `SnakeGame`. Size: **13.0 KB** gzipped (`dist/snake-game.js`, measured with Node's zlib, default level).
+**A. One file (works by double click, no server).** Copy `dist/snake-game.js` to your site and load it with a normal script tag. It registers `<snake-game>` and exposes a global `SnakeGame`. Size: **14.7 KB** gzipped (`dist/snake-game.js`, measured with Node's zlib, default level).
 
 ```html
 <script src="snake-game.js"></script>
@@ -73,7 +73,7 @@ Values that are not valid go back to the default, with one warning in the consol
 | `food` | `circle` / `square` | `circle` | Shape of the food. |
 | `food-halo` | `soft` / `none` | `soft` | Glow around the food. |
 | `intro` | `wave` / `cascade` / `none` | `wave` | How the grid appears when the game opens. |
-| `transitions` | `on` / `off` | `on` | Smooth growing of the head and shrinking of the tail. |
+| `transitions` | `on` / `off` | `on` | Smooth shrinking of the tail tip. |
 | `wrap` | boolean | off | Cross the walls instead of losing. Applies at the next restart. |
 | `cols`, `rows` | integers | automatic | Fixed size of the grid. Automatic means "fit the space" (at least 5). |
 | `speed` | moves per second | `5` | Starting speed. |
@@ -140,13 +140,17 @@ snake-game { --snake-color: rebeccapurple; --snake-spacing: 40px; }
 | --- | --- |
 | `--snake-grid-color`, `--snake-grid-dot-size`, `--snake-grid-line-width` | Grid color, dot size, line thickness |
 | `--snake-spacing` | Distance between cell centers |
-| `--snake-color`, `--snake-head-size`, `--snake-tail-size` | Snake |
+| `--snake-color`, `--snake-gap`, `--snake-head-size`, `--snake-tail-size` | Snake and the space between its dots |
 | `--snake-food-color`, `--snake-food-size`, `--snake-food-halo-color`, `--snake-food-halo-size` | Food and its glow |
 | `--snake-background`, `--snake-backdrop` | Board background and the page cover in modal mode |
-| `--snake-board-width`, `--snake-board-height` | Maximum board size |
+| `--snake-board-width`, `--snake-board-height`, `--snake-board-share` | Maximum board size, and the share of a phone screen the board takes (percentage, default `75%`) |
 | `--snake-text-color`, `--snake-font`, `--snake-font-size` | Texts |
 | `--snake-focus-color`, `--snake-button-size` | Keyboard focus outline, minimum button size |
 | `--snake-duration`, `--snake-intro-duration` | Transitions and grid entrance |
+
+By default the head is the spacing minus `--snake-gap` (30px) and the tip of the tail is 80% of the head (24px, and it follows a head you set by hand), so the space on screen between the head and the next dot is 2px, even when the grid shrinks to fit a small board. With `snake="taper"` the tail gets thinner and the space grows to about 8px at the tip; with `snake="uniform"` it is 2px along the whole body. `--snake-gap: 0` makes the dots touch and a negative value makes them overlap. You can still set `--snake-head-size` and `--snake-tail-size` to fixed values, like `16px` and `8px`.
+
+On phones (touch screen, short side up to 540px), in modal mode, the board takes `--snake-board-share` of the screen: 75% of the width when the phone is lying down (score and buttons on the right) and 75% of the height when it is standing (score on top). Turning the phone keeps the game going. Computers, tablets and `inline` mode keep the normal layout.
 
 Changes are picked up while the game is open. You can force it with `refreshStyles()`. Keep the text color at a contrast of at least 4.5:1 with the background (the test page warns you).
 

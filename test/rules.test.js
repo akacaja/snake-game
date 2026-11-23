@@ -8,7 +8,7 @@ import { TOKEN_DEFS } from '../src/theme.js';
 const root = resolve(fileURLToPath(new URL('..', import.meta.url)));
 const read = (file) => readFileSync(join(root, file), 'utf8');
 
-const DRAWING_FILES = ['src/renderers.js', 'src/snake-game.js', 'src/read-tokens.js', 'src/text.js'];
+const DRAWING_FILES = ['src/renderers.js', 'src/snake-game.js', 'src/read-tokens.js', 'src/text.js', 'src/geometry.js'];
 const LITERALS = [
   [/#[0-9a-fA-F]{3,8}\b/, 'hex color'],
   [/\b(rgb|rgba|hsl|hsla|hwb|lab|lch|oklab|oklch)\s*\(/i, 'color function'],

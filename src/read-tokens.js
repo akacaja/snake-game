@@ -1,7 +1,8 @@
 // Reads the resolved theme tokens from a host element.
 // The host exposes `--_<name>` (see theme.js). A hidden probe element inside the shadow DOM
 // lets the browser resolve them: any CSS color, rem, calc(), min() or var() works.
-import { TOKEN_DEFS } from './theme.js';
+import { TOKEN_DEFS, TAIL_RATIO } from './theme.js';
+import { resolveSnakeSizes } from './geometry.js';
 
 export function toCamel(name) {
   return name.replace(/-([a-z])/g, (m, letter) => letter.toUpperCase());
@@ -42,10 +43,21 @@ export function readTokens(probe) {
       probe.style.color = ref;
       value = getComputedStyle(probe).color;
       probe.style.color = '';
-    } else if (t.kind === 'length') {
-      probe.style.width = ref;
-      value = parseFloat(getComputedStyle(probe).width) || 0;
-      probe.style.width = '';
+    } else if (t.kind === 'length' || t.kind === 'auto-length') {
+      if (t.kind === 'auto-length' && getComputedStyle(probe).getPropertyValue(`--_${t.name}`).trim() === 'auto') {
+        value = null; // resolved below, from spacing and gap
+      } else {
+        probe.style.width = ref;
+        value = parseFloat(getComputedStyle(probe).width) || 0;
+        probe.style.width = '';
+      }
+    } else if (t.kind === 'signed-length') {
+      // `width` turns negative values into 0; margin-left keeps them.
+      probe.style.marginLeft = ref;
+      value = parseFloat(getComputedStyle(probe).marginLeft) || 0;
+      probe.style.marginLeft = '';
+    } else if (t.kind === 'percentage') {
+      continue; // Only the CSS uses --board-share (flex-basis); the code does not need the number.
     } else if (t.kind === 'time') {
       probe.style.transitionDuration = ref;
       value = parseDuration(getComputedStyle(probe).transitionDuration);
@@ -57,5 +69,8 @@ export function readTokens(probe) {
     }
     tokens[toCamel(t.name)] = value;
   }
+  const { headSize, tailSize } = resolveSnakeSizes({ spacing: tokens.spacing, gap: tokens.gap, head: tokens.headSize, tail: tokens.tailSize, ratio: TAIL_RATIO });
+  tokens.headSize = headSize;
+  tokens.tailSize = tailSize;
   return tokens;
 }

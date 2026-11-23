@@ -17,7 +17,7 @@ Por padrão o jogo começa fechado. O atributo `open` faz ele abrir sozinho, com
 
 Há duas formas. Escolha uma.
 
-**A. Um arquivo só (funciona com duplo clique, sem servidor).** Copie `dist/snake-game.js` para o seu site e carregue com uma tag de script normal. Ele registra `<snake-game>` e expõe um global `SnakeGame`. Tamanho: **13,0 KB** comprimido com gzip (`dist/snake-game.js`, medido com o zlib do Node, nível padrão).
+**A. Um arquivo só (funciona com duplo clique, sem servidor).** Copie `dist/snake-game.js` para o seu site e carregue com uma tag de script normal. Ele registra `<snake-game>` e expõe um global `SnakeGame`. Tamanho: **14,7 KB** comprimido com gzip (`dist/snake-game.js`, medido com o zlib do Node, nível padrão).
 
 ```html
 <script src="snake-game.js"></script>
@@ -73,7 +73,7 @@ Valores que não são válidos voltam ao padrão, com um aviso no console.
 | `food` | `circle` / `square` | `circle` | Forma da comida. |
 | `food-halo` | `soft` / `none` | `soft` | Brilho em volta da comida. |
 | `intro` | `wave` / `cascade` / `none` | `wave` | Como a grade aparece quando o jogo abre. |
-| `transitions` | `on` / `off` | `on` | Crescimento suave da cabeça e encolhimento da cauda. |
+| `transitions` | `on` / `off` | `on` | Encolhimento suave da ponta da cauda. |
 | `wrap` | booleano | desligado | Atravessar as paredes em vez de perder. Vale a partir do próximo reinício. |
 | `cols`, `rows` | inteiros | automático | Tamanho fixo da grade. Automático quer dizer "caber no espaço" (no mínimo 5). |
 | `speed` | movimentos por segundo | `5` | Velocidade inicial. |
@@ -140,13 +140,17 @@ snake-game { --snake-color: rebeccapurple; --snake-spacing: 40px; }
 | --- | --- |
 | `--snake-grid-color`, `--snake-grid-dot-size`, `--snake-grid-line-width` | Cor da grade, tamanho do ponto, espessura da linha |
 | `--snake-spacing` | Distância entre os centros das células |
-| `--snake-color`, `--snake-head-size`, `--snake-tail-size` | Cobra |
+| `--snake-color`, `--snake-gap`, `--snake-head-size`, `--snake-tail-size` | Cobra e o espaço entre as bolinhas |
 | `--snake-food-color`, `--snake-food-size`, `--snake-food-halo-color`, `--snake-food-halo-size` | Comida e o seu brilho |
 | `--snake-background`, `--snake-backdrop` | Fundo do tabuleiro e a cobertura da página no modo modal |
-| `--snake-board-width`, `--snake-board-height` | Tamanho máximo do tabuleiro |
+| `--snake-board-width`, `--snake-board-height`, `--snake-board-share` | Tamanho máximo do tabuleiro e a parte da tela do celular que ele ocupa (porcentagem, padrão `75%`) |
 | `--snake-text-color`, `--snake-font`, `--snake-font-size` | Textos |
 | `--snake-focus-color`, `--snake-button-size` | Contorno do foco do teclado, tamanho mínimo dos botões |
 | `--snake-duration`, `--snake-intro-duration` | Transições e entrada da grade |
+
+Por padrão, a cabeça é o espaçamento menos `--snake-gap` (30px) e a ponta do rabo é 80% da cabeça (24px, e acompanha uma cabeça que você definir), então o vão na tela entre a cabeça e a próxima bolinha é de 2px, mesmo quando a grade encolhe para caber num tabuleiro pequeno. Com `snake="taper"` o rabo afina e o vão cresce até cerca de 8px na ponta; com `snake="uniform"` é 2px em todo o corpo. `--snake-gap: 0` faz as bolinhas se encostarem e um valor negativo faz elas se sobreporem. Você ainda pode definir `--snake-head-size` e `--snake-tail-size` com valores fixos, como `16px` e `8px`.
+
+No celular (tela de toque, lado menor até 540px), no modo modal, o tabuleiro ocupa `--snake-board-share` da tela: 75% da largura com o celular deitado (placar e botões à direita) e 75% da altura com o celular em pé (placar em cima). Girar o celular mantém a partida. Computadores, tablets e o modo `inline` mantêm o layout normal.
 
 As mudanças são percebidas enquanto o jogo está aberto. Você pode forçar com `refreshStyles()`. Mantenha a cor do texto com contraste de pelo menos 4,5:1 com o fundo (a página de teste avisa).
 
