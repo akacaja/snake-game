@@ -1,8 +1,9 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { readFileSync, readdirSync, statSync } from 'node:fs';
-import { join, relative, resolve } from 'node:path';
+import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
+import { dirname, join, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { TOKEN_DEFS } from '../src/theme.js';
 
 const root = resolve(fileURLToPath(new URL('..', import.meta.url)));
 const read = (file) => readFileSync(join(root, file), 'utf8');
@@ -43,7 +44,7 @@ test('no third-party company names in the repository (outside .crew and test)', 
       const rel = relative(root, path);
       assert.ok(!names.test(entry), `file name ${rel} contains a forbidden name`);
       if (statSync(path).isDirectory()) walk(path);
-      else if (/\.(js|html|md|json|css|txt)$/.test(entry) || !entry.includes('.')) {
+      else if (/\.(js|html|md|json|css|txt|svg)$/.test(entry) || !entry.includes('.')) {
         assert.ok(!names.test(readFileSync(path, 'utf8')), `${rel} contains a forbidden name`);
       }
     }
@@ -55,4 +56,24 @@ test('there are no dependencies in package.json', () => {
   const pkg = JSON.parse(read('package.json'));
   assert.equal(pkg.dependencies, undefined);
   assert.equal(pkg.devDependencies, undefined);
+});
+
+test('the favicon uses the current snake and food colors from the theme', () => {
+  // Remove the comment: the colors must be on the circles, not just in the note.
+  const svg = read('demo/favicon.svg').replace(/<!--[\s\S]*?-->/g, '');
+  const value = (name) => TOKEN_DEFS.find((t) => t.name === name).value;
+  const fills = [...svg.matchAll(/<circle\b[^>]*\bfill="([^"]+)"/g)].map((m) => m[1]);
+  const snake = fills.slice(0, -1);
+  assert.ok(snake.length > 0, 'favicon has no snake circles');
+  assert.ok(snake.every((f) => f === value('color')), 'snake color differs from the theme');
+  assert.equal(fills.at(-1), value('food-color'), 'food color differs from the theme');
+});
+
+test('demo and module pages point rel="icon" to a file that exists', () => {
+  for (const page of ['demo/index.html', 'examples/module.html']) {
+    const tag = read(page).match(/<link\b(?=[^>]*\brel="icon")[^>]*>/)?.[0];
+    const href = tag?.match(/\bhref="([^"]+)"/)?.[1];
+    assert.ok(href, `${page} has no rel="icon"`);
+    assert.ok(existsSync(resolve(root, dirname(page), href)), `${page}: ${href} does not exist`);
+  }
 });

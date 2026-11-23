@@ -41,7 +41,8 @@ export const themeCSS = `
 ${declarations}
 }
 :host(:not([mode="inline"])) { display: contents; }
-:host([mode="inline"]) { display: block; }
+/* Fills the container also in flex/grid rows; any page rule on the tag overrides it. */
+:host([mode="inline"]) { display: block; width: 100%; box-sizing: border-box; }
 :host([mode="inline"]:not([open])) { display: none; }
 
 *, *::before, *::after { box-sizing: border-box; }
