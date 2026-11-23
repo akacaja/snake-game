@@ -2,6 +2,7 @@
 import { createEngine } from './engine.js';
 import { directionFromKey, directionFromSwipe } from './input.js';
 import { DEFAULT_TEXTS, formatText, pickPluralText, resolveLocale } from './text.js';
+import { dotDiameter, gridSize, snakeFit } from './geometry.js';
 import { themeCSS } from './theme.js';
 import { createProbe, rawTokenKey, readTokens } from './read-tokens.js';
 import { drawFood, drawGrid, drawSnake } from './renderers.js';
@@ -476,7 +477,6 @@ export class SnakeGameElement extends Base {
   _resetTimes() {
     this._introStart = -Infinity;
     this._introEnd = 0;
-    this._lastStep = -Infinity;
     this._ghost = null;
     this._foodKey = '';
     this._foodBorn = -Infinity;
@@ -488,8 +488,9 @@ export class SnakeGameElement extends Base {
     this._offs = [];
     const tokens = this._tokens;
     const spacing = tokens.spacing || 1;
-    const cols = this._number('cols', Math.max(MIN_CELLS, Math.floor(this._w / spacing)), { min: 2, integer: true });
-    const rows = this._number('rows', Math.max(MIN_CELLS, Math.floor(this._h / spacing)), { min: 2, integer: true });
+    const fit = gridSize(this._w, this._h, spacing, MIN_CELLS);
+    const cols = this._number('cols', fit.cols, { min: 2, integer: true });
+    const rows = this._number('rows', fit.rows, { min: 2, integer: true });
     const engine = createEngine({
       cols,
       rows,
@@ -523,7 +524,6 @@ export class SnakeGameElement extends Base {
     const on = (type, fn) => this._offs.push(engine.on(type, fn));
     on('step', ({ removedTail }) => {
       const now = performance.now();
-      this._lastStep = now;
       // Keep the tail cell that just left, so the drawing can shrink it out smoothly.
       this._ghost = removedTail ? { ...removedTail, time: now } : null;
     });
@@ -664,15 +664,15 @@ export class SnakeGameElement extends Base {
     let foodItem = null;
     if (visible) {
       const count = state.snake.length;
-      const tailSize = options.snake === 'uniform' ? tokens.headSize : tokens.tailSize;
-      const headGrow = duration === 0 ? 1 : easeOut((now - this._lastStep) / duration);
+      const uniform = options.snake === 'uniform';
+      // When the grid is squeezed, k shrinks every dot so the gap between them stays the same on screen.
+      const k = snakeFit({ fitted: spacing, scale, headSize: tokens.headSize, gap: tokens.gap });
+      const dot = (index, total = count) => dotDiameter({ index, count: total, headSize: tokens.headSize, tailSize: tokens.tailSize, uniform, scale, k });
       state.snake.forEach((cell, index) => {
-        const along = count > 1 ? index / (count - 1) : 0;
-        const base = options.snake === 'uniform' ? tokens.headSize : tokens.headSize + (tailSize - tokens.headSize) * along;
         const c = center(cell.x, cell.y);
         segments.push({
           x: cell.x, y: cell.y, cx: c.x, cy: c.y, index,
-          size: base * scale * grow * (index === 0 ? headGrow : 1),
+          size: dot(index) * grow,
           opacity: 1,
         });
       });
@@ -682,7 +682,7 @@ export class SnakeGameElement extends Base {
         const c = center(ghost.x, ghost.y);
         segments.push({
           x: ghost.x, y: ghost.y, cx: c.x, cy: c.y, index: count,
-          size: tailSize * scale * left, opacity: left,
+          size: dot(1, 2) * left, opacity: left,
         });
       }
       if (state.food) {
