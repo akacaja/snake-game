@@ -1,5 +1,9 @@
 # snake-game
 
+[Português (Brasil)](README.pt-BR.md)
+
+Live demo: https://akacaja.github.io/snake-game/demo/
+
 A snake game as a web component. Add one script, add one tag, and the game shows up. No dependencies, no framework.
 
 ```html
@@ -13,7 +17,7 @@ By default the game starts closed. The `open` attribute makes it open by itself,
 
 There are two ways. Pick one.
 
-**A. One file (works by double click, no server).** Copy `dist/snake-game.js` to your site and load it with a normal script tag. It registers `<snake-game>` and exposes a global `SnakeGame`.
+**A. One file (works by double click, no server).** Copy `dist/snake-game.js` to your site and load it with a normal script tag. It registers `<snake-game>` and exposes a global `SnakeGame`. Size: **13.0 KB** gzipped (`dist/snake-game.js`, measured with Node's zlib, default level).
 
 ```html
 <script src="snake-game.js"></script>
@@ -189,9 +193,14 @@ From the single file it is `SnakeGame.createEngine(...)`. The global `SnakeGame`
 npm test                 # automatic tests (Node, no dependencies)
 npm run build            # regenerates dist/snake-game.js
 node scripts/serve.js    # http://localhost:8000/demo/ and /examples/module.html
+npm run serve:pages      # same, under /snake-game/ like GitHub Pages
 ```
 
+When the server starts, it also prints your network address (for example `http://192.168.0.12:8000/demo/`). Open it on a phone on the same Wi-Fi to try the game with your finger.
+
 `python3 -m http.server 8000` works as well. `examples/minimal.html` uses the single file and opens by double click. `demo/index.html` is a test page with every option, the tokens, a contrast warning and an event log.
+
+Changes: see [CHANGELOG.md](CHANGELOG.md).
 
 ## License
 

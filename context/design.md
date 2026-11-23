@@ -24,7 +24,4 @@ Criado pelo /agent-crew:new-project. Este arquivo traz as REGRAS DE USO do visua
 
 ## Referências visuais
 
-Prints de telas ficam em `context/prototype/`. Liste aqui o que cada um mostra.
-
-- `grid.png`: tabuleiro vazio, uma grade regular de pontos cinza claros sobre fundo branco.
-- `grid-highlight.png`: a mesma grade com um ponto azul em destaque. Os pontos cinza próximos dele aparecem um pouco maiores, com um leve brilho em volta do ponto azul.
+Os prints de referência ficam só neste computador, em `context/prototype/` (fora do Git). Eles mostram uma grade regular de pontos claros sobre fundo branco, com um ponto de destaque colorido. Os padrões de cor e forma de `src/theme.js` vieram dessa referência.
