@@ -2,6 +2,23 @@
 
 All notable changes to this project are listed here. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project uses [Semantic Versioning](https://semver.org/).
 
+## [0.2.0] - 2026-11-24
+
+### Added
+
+- Skins: the `skin` attribute turns the food into an emoji (a different one each time) and applies a palette. Three skins in `skins/`: `natal`, `halloween` and `carnaval`, loaded by separate script files.
+- `skin-palette="off"` keeps your colors and uses only the emoji.
+- `SnakeGame.registerSkin(name, skin)` and the queue `globalThis.snakeGameSkins`, to add your own skin.
+- `--snake-food-emoji-size` (a share of the spacing, default `75%`) and the text `text-ate-food`.
+- `scene.foodItem.emoji` for your own food drawing.
+- The test page has a skin selector, with two test skins.
+
+### Changed
+
+- `dist/snake-game.js` is built without comments (about 14.7 KB gzipped). The code in `src/` keeps all of them.
+- Color tokens have one more layer for the skin palette (`--snake-*`, then the skin, then the default). Nothing changes without a skin.
+- Colors may also be written in `skins/*.js` (the rule used to be `src/theme.js` only).
+
 ## [0.1.0] - 2026-11-23
 
 ### Added

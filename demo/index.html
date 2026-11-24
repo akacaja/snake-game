@@ -45,6 +45,12 @@
       </fieldset>
 
       <fieldset>
+        <legend>Skin</legend>
+        <label>skin <select id="opt-skin"></select></label>
+        <label class="check"><input type="checkbox" id="opt-skin-palette" checked> skin palette (off: keep the site colors)</label>
+      </fieldset>
+
+      <fieldset>
         <legend>Apply on the next restart</legend>
         <label class="check"><input type="checkbox" id="opt-wrap"> wrap (cross the walls)</label>
         <label>cols <input type="number" id="opt-cols" min="2" placeholder="auto"></label>
@@ -59,6 +65,7 @@
         </label>
         <label>text-game-over-one <input type="text" id="txt-one" placeholder="Game over, {score} point"></label>
         <label>text-game-over-other <input type="text" id="txt-other" placeholder="Game over, {score} points"></label>
+        <label>text-ate-food <input type="text" id="txt-ate-food" placeholder="Ate {food}. Score {score}"></label>
       </fieldset>
 
       <fieldset>
@@ -77,8 +84,12 @@
     </section>
   </main>
 
+  <!-- Optional skin files: they can come before or after the game. -->
+  <script src="../skins/natal.js"></script>
+  <script src="../skins/halloween.js"></script>
+  <script src="../skins/carnaval.js"></script>
   <script type="module">
-    import './../src/snake-game.js';
+    import { registerSkin } from './../src/snake-game.js';
     import { contrastRatio } from './contrast.js';
 
     const game = document.getElementById('game');
@@ -111,15 +122,17 @@
     const TOKEN_FIELDS = [
       ['text-color', true], ['background', true], ['backdrop', true],
       ['grid-color'], ['color'], ['food-color'], ['food-halo-color'],
-      ['spacing'], ['grid-dot-size'], ['gap'], ['head-size'], ['tail-size'], ['food-size'],
+      ['spacing'], ['grid-dot-size'], ['gap'], ['head-size'], ['tail-size'], ['food-size'], ['food-emoji-size'],
       ['board-share'], ['duration'], ['intro-duration'],
     ];
     const colorFields = [];
+    const tokenInputs = [];
     for (const [name, isContrast] of TOKEN_FIELDS) {
       const label = document.createElement('label');
       label.append(`--snake-${name}`);
       const input = document.createElement('input');
       input.type = 'text';
+      tokenInputs.push([name, input]);
       input.placeholder = getComputedStyle(game).getPropertyValue(`--_${name}`).trim();
       if (isContrast) {
         input.setAttribute('aria-describedby', 'contrast-status');
@@ -135,6 +148,25 @@
       $('tokens').append(label);
     }
 
+    // ---- skins ----
+    // Two test skins, registered here with registerSkin: they also show how to write your own skin.
+    registerSkin('teste: emoji inexistente', { foods: [{ emoji: '\u{10FFFD}', names: { en: 'missing' } }, { emoji: '🎁', names: { en: 'gift', pt: 'presente' } }] });
+    registerSkin('teste: nenhum emoji', { foods: [{ emoji: '\u{10FFFD}', names: { en: 'missing' } }, { emoji: '\u{10FFFC}', names: { en: 'missing' } }] });
+    const skinSelect = $('opt-skin');
+    skinSelect.add(new Option('(none)', ''));
+    for (const skin of ['natal', 'halloween', 'carnaval', 'teste: emoji inexistente', 'teste: nenhum emoji']) skinSelect.add(new Option(skin, skin));
+    // A skin changes the colors, so the contrast warning and the placeholders of the token fields are updated.
+    const skinChanged = () => {
+      if (skinSelect.value) game.setAttribute('skin', skinSelect.value);
+      else game.removeAttribute('skin');
+      if ($('opt-skin-palette').checked) game.removeAttribute('skin-palette');
+      else game.setAttribute('skin-palette', 'off');
+      updateContrast(true);
+      for (const [name, input] of tokenInputs) input.placeholder = getComputedStyle(game).getPropertyValue(`--_${name}`).trim();
+    };
+    skinSelect.addEventListener('change', skinChanged);
+    $('opt-skin-palette').addEventListener('change', skinChanged);
+
     // ---- attributes applied at restart ----
     const bindAttr = (id, name, boolean) => {
       $(id).addEventListener('input', () => {
@@ -149,13 +181,15 @@
     bindAttr('opt-speed', 'speed');
     bindAttr('txt-one', 'text-game-over-one');
     bindAttr('txt-other', 'text-game-over-other');
+    bindAttr('txt-ate-food', 'text-ate-food');
 
     $('opt-lang').addEventListener('change', (e) => {
       const lang = e.target.value;
       game.setAttribute('lang', lang);
       const one = lang === 'pt-BR' ? 'Fim de jogo, {score} ponto' : '';
       const other = lang === 'pt-BR' ? 'Fim de jogo, {score} pontos' : '';
-      for (const [id, value] of [['txt-one', one], ['txt-other', other]]) {
+      const ate = lang === 'pt-BR' ? 'Comeu {food}. Pontos: {score}' : '';
+      for (const [id, value] of [['txt-one', one], ['txt-other', other], ['txt-ate-food', ate]]) {
         $(id).value = value;
         $(id).dispatchEvent(new Event('input'));
       }

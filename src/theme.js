@@ -1,5 +1,5 @@
 // THEME: the single source of truth for every visual value (colors, sizes, fonts, spacing).
-// Nothing else in src/ may contain a literal color or a size in pixels.
+// Nothing else in src/ may contain a literal color or a size in pixels (the only other place for colors is skins/*.js).
 // Each token below is public: set `--snake-<name>` on the element, on a parent or on :root
 // and it overrides the default. When the Figma file arrives, only this file changes.
 
@@ -12,6 +12,10 @@ const PHONE_PORTRAIT = '(pointer: coarse) and (orientation: portrait) and (max-w
 export const TAIL_RATIO = 0.8;
 // Floor of the board on phones, in case --snake-board-share holds something invalid.
 const BOARD_MIN_SHARE = '50%';
+
+// Font of the emoji food, and font size of the canvas test that checks the device can show an emoji.
+export const EMOJI_FONT = '"Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif';
+export const EMOJI_PROBE_SIZE = 32;
 
 // kind 'auto-length': a length, or the word `auto` (the default), which the code resolves (see geometry.js, resolveSnakeSizes).
 export const TOKEN_DEFS = [
@@ -28,6 +32,7 @@ export const TOKEN_DEFS = [
   // Food
   { name: 'food-color', kind: 'color', value: '#2563eb', doc: 'Color of the food.' },
   { name: 'food-size', kind: 'length', value: '12px', doc: 'Diameter of the food.' },
+  { name: 'food-emoji-size', kind: 'percentage', value: '75%', doc: 'Size of the emoji food (skins), as a share of the spacing: 75% of 32px is 24px. Shrinks with the grid. No glow.' },
   { name: 'food-halo-color', kind: 'color', value: 'rgb(37 99 235 / 0.35)', doc: 'Color of the soft glow around the food.' },
   { name: 'food-halo-size', kind: 'length', value: '24px', doc: 'Blur of the glow around the food.' },
   // Board and overlay
@@ -47,7 +52,9 @@ export const TOKEN_DEFS = [
   { name: 'intro-duration', kind: 'time', value: '900ms', doc: 'Duration of the opening wave or cascade.' },
 ];
 
-const declarations = TOKEN_DEFS.map((t) => `  /* ${t.doc} */\n  --_${t.name}: var(--snake-${t.name}, ${t.value});`).join('\n');
+// Colors have one more layer: --snake-x (the owner), then --_skin-x (the skin palette, see skins.js), then the default.
+const fallback = (t) => (t.kind === 'color' ? `var(--_skin-${t.name}, ${t.value})` : t.value);
+const declarations = TOKEN_DEFS.map((t) => `  /* ${t.doc} */\n  --_${t.name}: var(--snake-${t.name}, ${fallback(t)});`).join('\n');
 
 export const themeCSS = `
 :host {

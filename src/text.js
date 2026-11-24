@@ -11,6 +11,7 @@ export const DEFAULT_TEXTS = {
   paused: 'Paused. Press space to continue.',
   close: 'Close game',
   ate: 'Score {score}',
+  ateFood: 'Ate {food}. Score {score}',
   gameOver: {
     one: 'Game over, {score} point',
     other: 'Game over, {score} points',

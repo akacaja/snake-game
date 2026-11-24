@@ -8,7 +8,7 @@ import { TOKEN_DEFS } from '../src/theme.js';
 const root = resolve(fileURLToPath(new URL('..', import.meta.url)));
 const read = (file) => readFileSync(join(root, file), 'utf8');
 
-const DRAWING_FILES = ['src/renderers.js', 'src/snake-game.js', 'src/read-tokens.js', 'src/text.js', 'src/geometry.js'];
+const DRAWING_FILES = ['src/renderers.js', 'src/snake-game.js', 'src/read-tokens.js', 'src/text.js', 'src/geometry.js', 'src/skins.js'];
 const LITERALS = [
   [/#[0-9a-fA-F]{3,8}\b/, 'hex color'],
   [/\b(rgb|rgba|hsl|hsla|hwb|lab|lch|oklab|oklch)\s*\(/i, 'color function'],
@@ -16,13 +16,21 @@ const LITERALS = [
   [/\b(transparent|black|white|red|green|blue|gray|grey|orange|yellow|purple|pink|brown|cyan|magenta|silver|gold|navy|teal)\b/i, 'color name'],
 ];
 
-test('no literal colors or sizes outside src/theme.js', () => {
+test('no literal colors or sizes outside src/theme.js and skins/*.js', () => {
   for (const file of DRAWING_FILES) {
     const lines = read(file).split('\n');
     lines.forEach((line, i) => {
       for (const [re, what] of LITERALS) {
         assert.ok(!re.test(line), `${file}:${i + 1} has a ${what}: ${line.trim()}`);
       }
+    });
+  }
+});
+
+test('skin files have no sizes in px (they only carry colors and emoji)', () => {
+  for (const file of readdirSync(join(root, 'skins')).filter((f) => f.endsWith('.js'))) {
+    read(`skins/${file}`).split('\n').forEach((line, i) => {
+      assert.ok(!/\b\d+(\.\d+)?\s*px\b/i.test(line), `skins/${file}:${i + 1} has a size in px`);
     });
   }
 });

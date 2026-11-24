@@ -29,7 +29,7 @@ There are two ways. Pick one.
 <script type="module" src="src/snake-game.js"></script>
 ```
 
-The file `dist/snake-game.js` is generated. Do not edit it. After changing anything in `src/`, run `npm run build`.
+The file `dist/snake-game.js` is generated. Do not edit it. It has no comments (the code in `src/` has them). After changing anything in `src/`, run `npm run build`.
 
 Browser support: the modal uses the native `<dialog>` element, so you need a browser from 2022 or newer (Safari 15.4+, Firefox 98+, Chrome 99+). When the page is opened through `file://`, some browsers (Safari in particular) may not save the best score.
 
@@ -74,6 +74,8 @@ Values that are not valid go back to the default, with one warning in the consol
 | `food-halo` | `soft` / `none` | `soft` | Glow around the food. |
 | `intro` | `wave` / `cascade` / `none` | `wave` | How the grid appears when the game opens. |
 | `transitions` | `on` / `off` | `on` | Smooth shrinking of the tail tip. |
+| `skin` | name of a skin | none | Theme of the food (emoji) and of the colors. See [Skins](#skins). |
+| `skin-palette` | `on` / `off` | `on` | `off` keeps the colors of your site and uses only the emoji of the skin. |
 | `wrap` | boolean | off | Cross the walls instead of losing. Applies at the next restart. |
 | `cols`, `rows` | integers | automatic | Fixed size of the grid. Automatic means "fit the space" (at least 5). |
 | `speed` | moves per second | `5` | Starting speed. |
@@ -99,6 +101,7 @@ All texts can be replaced. Use `{score}` and `{best}` where they apply.
 | `text-paused` | `Paused. Press space to continue.` |
 | `text-close` | `Close game` |
 | `text-ate` | `Score {score}` (read by screen readers when the snake eats) |
+| `text-ate-food` | `Ate {food}. Score {score}` (the same, when the food is an emoji of a skin; `{food}` is its name) |
 
 The game over text depends on the number (`Intl.PluralRules`). The language comes from the closest `lang` attribute (the tag itself, a parent, or `<html lang>`), then `en`. For languages with more forms, also set `text-game-over-zero`, `-two`, `-few` or `-many`. A missing form falls back to `-other`.
 
@@ -141,7 +144,7 @@ snake-game { --snake-color: rebeccapurple; --snake-spacing: 40px; }
 | `--snake-grid-color`, `--snake-grid-dot-size`, `--snake-grid-line-width` | Grid color, dot size, line thickness |
 | `--snake-spacing` | Distance between cell centers |
 | `--snake-color`, `--snake-gap`, `--snake-head-size`, `--snake-tail-size` | Snake and the space between its dots |
-| `--snake-food-color`, `--snake-food-size`, `--snake-food-halo-color`, `--snake-food-halo-size` | Food and its glow |
+| `--snake-food-color`, `--snake-food-size`, `--snake-food-halo-color`, `--snake-food-halo-size`, `--snake-food-emoji-size` | Food and its glow. `--snake-food-emoji-size`: size of an emoji food, as a share of the spacing (percentage, default `75%`, so 24px when the spacing is 32px; it shrinks with the grid) |
 | `--snake-background`, `--snake-backdrop` | Board background and the page cover in modal mode |
 | `--snake-board-width`, `--snake-board-height`, `--snake-board-share` | Maximum board size, and the share of a phone screen the board takes (percentage, default `75%`) |
 | `--snake-text-color`, `--snake-font`, `--snake-font-size` | Texts |
@@ -153,6 +156,30 @@ By default the head is the spacing minus `--snake-gap` (30px) and the tip of the
 On phones (touch screen, short side up to 540px), in modal mode, the board takes `--snake-board-share` of the screen: 75% of the width when the phone is lying down (score and buttons on the right) and 75% of the height when it is standing (score on top). Turning the phone keeps the game going. Computers, tablets and `inline` mode keep the normal layout.
 
 Changes are picked up while the game is open. You can force it with `refreshStyles()`. Keep the text color at a contrast of at least 4.5:1 with the background (the test page warns you).
+
+## Skins
+
+A skin is an optional theme: the food becomes an emoji (a different one each time, never the same twice in a row) and the colors change. Without `skin`, the game looks the same as always. Three skins come in the `skins/` folder: `natal` (Christmas), `halloween` and `carnaval`. They are separate files, so they are not in `dist/snake-game.js`. Load the file you want, before or after the game, and set the attribute:
+
+```html
+<script src="skins/natal.js"></script>
+<script src="dist/snake-game.js"></script>
+<snake-game skin="natal" open></snake-game>
+```
+
+- Colors: your `--snake-*` variables win, then the colors of the skin, then the defaults. `skin-palette="off"` keeps your colors and uses only the emoji.
+- An emoji that the device cannot show is left out of the draw. If none can be shown, the normal circle or square appears (with the food color of the palette). A name that is not registered, for example because the file did not load, gives one warning in the console and the normal game.
+- Your own skin: add `[name, skin]` to `globalThis.snakeGameSkins` (works in any order, also with ES modules) or call `SnakeGame.registerSkin(name, skin)`, which returns `true` or `false`. The palette takes only color tokens, without the `--snake-` prefix. A food needs an emoji and a name (`en` and `pt`, for example). What is not valid is skipped, with a warning.
+
+```js
+(globalThis.snakeGameSkins = globalThis.snakeGameSkins || []).push(['pizza', {
+  foods: [{ emoji: '🍕', names: { en: 'pizza', pt: 'pizza' } }],
+  palette: { color: '#7a2e0e', 'food-color': '#c0392b' },
+}]);
+```
+
+- Your own drawing: for an emoji food, `scene.foodItem.emoji` holds the text (otherwise `null`), and `foodItem.size` is already the emoji size.
+- Accessibility: when the snake eats an emoji, the name is read in the language of the page (`text-ate-food`). With `prefers-reduced-motion`, nothing changes: the emoji appears without animation, like everything else.
 
 ## Your own drawing
 
@@ -182,7 +209,7 @@ engine.step();            // you decide the clock
 console.log(engine.getState());
 ```
 
-From the single file it is `SnakeGame.createEngine(...)`. The global `SnakeGame` also has `SnakeGameElement`, the three draw functions, `directionFromKey` and `directionFromSwipe`. It never replaces an existing `window.SnakeGame`.
+From the single file it is `SnakeGame.createEngine(...)`. The global `SnakeGame` also has `SnakeGameElement`, the three draw functions, `registerSkin`, `directionFromKey` and `directionFromSwipe`. It never replaces an existing `window.SnakeGame`.
 
 ## Controls and accessibility
 

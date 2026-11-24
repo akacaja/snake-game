@@ -76,6 +76,107 @@ function parseModule(file) {
   return { file, text, code: code.trim(), deps, exported, declared };
 }
 
+// Removes // and /* */ comments from JavaScript source (the dist is generated, so it does not need them).
+// A small scanner instead of a regex: it skips strings, template literals (also nested ones) and regex literals,
+// so a "//" inside them stays. A line that only held a comment disappears.
+const REGEX_AFTER_WORD = new Set(['return', 'typeof', 'case', 'in', 'of', 'delete', 'void', 'throw', 'new', 'else', 'do', 'yield', 'await', 'instanceof']);
+
+export function stripComments(src) {
+  let out = '';
+  let i = 0;
+  let prev = ''; // last significant character ('a' stands for a word, a number or a string)
+  let word = ''; // the last word, to tell `return /re/` from `a / b`
+  const braces = []; // one counter per open `${` of a template: how many `{` are open inside it
+  const isWord = (c) => /[A-Za-z0-9_$]/.test(c);
+  const readTemplate = () => { // i is just after a backtick, or just after the `}` that closes a `${`
+    while (i < src.length) {
+      const c = src[i];
+      if (c === '\\') { out += src.slice(i, i + 2); i += 2; continue; }
+      out += c;
+      i += 1;
+      if (c === '`') return;
+      if (c === '$' && src[i] === '{') { out += '{'; i += 1; braces.push(0); return; }
+    }
+  };
+  while (i < src.length) {
+    const c = src[i];
+    const next = src[i + 1];
+    if (c === '/' && (next === '/' || next === '*')) {
+      const end = next === '/' ? src.indexOf('\n', i) : src.indexOf('*/', i + 2) + 2;
+      i = end <= (next === '/' ? -1 : 1) ? src.length : end; // an unclosed comment ends the file
+      out = out.replace(/[ \t]+$/, '');
+      const alone = out === '' || out.endsWith('\n');
+      const rest = /^[ \t]*\n/.exec(src.slice(i));
+      if (alone && rest) i += rest[0].length; // the whole line was a comment
+      else if (next === '*' && !alone && !/\s/.test(src[i] || '\n')) out += ' ';
+      continue;
+    }
+    if (c === '"' || c === "'") {
+      let j = i + 1;
+      while (j < src.length && src[j] !== c && src[j] !== '\n') j += src[j] === '\\' ? 2 : 1;
+      out += src.slice(i, j + 1);
+      i = j + 1;
+      prev = 'a';
+      word = '';
+      continue;
+    }
+    if (c === '`') {
+      out += c;
+      i += 1;
+      readTemplate();
+      prev = 'a';
+      word = '';
+      continue;
+    }
+    if (c === '/' && (prev === '' || (prev === 'a' ? REGEX_AFTER_WORD.has(word) : !')]'.includes(prev)))) {
+      let j = i + 1;
+      let inClass = false;
+      while (j < src.length && src[j] !== '\n' && (src[j] !== '/' || inClass)) {
+        if (src[j] === '\\') j += 1;
+        else if (src[j] === '[') inClass = true;
+        else if (src[j] === ']') inClass = false;
+        j += 1;
+      }
+      j += 1;
+      while (j < src.length && isWord(src[j])) j += 1;
+      out += src.slice(i, j);
+      i = j;
+      prev = 'a';
+      word = '';
+      continue;
+    }
+    if (isWord(c)) {
+      let j = i;
+      while (j < src.length && isWord(src[j])) j += 1;
+      word = src.slice(i, j);
+      out += word;
+      i = j;
+      prev = 'a';
+      continue;
+    }
+    if (braces.length > 0 && c === '{') braces[braces.length - 1] += 1;
+    if (braces.length > 0 && c === '}') {
+      if (braces[braces.length - 1] === 0) { // the `${ ... }` ends: back to the template text
+        braces.pop();
+        out += c;
+        i += 1;
+        readTemplate();
+        prev = 'a';
+        word = '';
+        continue;
+      }
+      braces[braces.length - 1] -= 1;
+    }
+    out += c;
+    i += 1;
+    if (!/\s/.test(c)) {
+      prev = c;
+      word = '';
+    }
+  }
+  return out;
+}
+
 export function bundle(entry = defaultEntry) {
   const entryPath = resolve(entry);
   const ordered = [];
@@ -104,7 +205,7 @@ export function bundle(entry = defaultEntry) {
   const entryMod = ordered[ordered.length - 1];
   const version = JSON.parse(readFileSync(resolve(rootDir, 'package.json'), 'utf8')).version;
   const exportsList = [...new Set(entryMod.exported)];
-  const parts = ordered.map((m) => `// ---- ${relative(rootDir, m.file).split('\\').join('/')} ----\n${m.code}`);
+  const parts = ordered.map((m) => `// ---- ${relative(rootDir, m.file).split('\\').join('/')} ----\n${stripComments(m.code).trim()}`);
 
   const globalBlock = [
     '// ---- global ----',
