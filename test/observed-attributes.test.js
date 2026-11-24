@@ -7,4 +7,5 @@ test('observedAttributes includes open and mode (mode change reopens the game)',
   assert.ok(observed.includes('open'));
   assert.ok(observed.includes('mode'));
   assert.ok(observed.includes('text-title'));
+  for (const name of ['skin', 'skin-palette', 'text-ate-food']) assert.ok(observed.includes(name), name);
 });

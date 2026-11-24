@@ -44,3 +44,8 @@ test('invalid lang falls back to English without throwing', () => {
     assert.equal(pluralCategory(12, lang), 'other');
   }
 });
+
+test('the default texts have the spoken text for skin food', () => {
+  assert.equal(formatText(DEFAULT_TEXTS.ateFood, { food: 'gift', score: 3 }), 'Ate gift. Score 3');
+  assert.equal(formatText(DEFAULT_TEXTS.ate, { score: 3 }), 'Score 3');
+});

@@ -1,8 +1,9 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { parseDuration, toCamel } from '../src/read-tokens.js';
+import { parseDuration, parsePercent, toCamel } from '../src/read-tokens.js';
 import { readFileSync } from 'node:fs';
 import { TOKEN_DEFS, TAIL_RATIO, themeCSS } from '../src/theme.js';
+import { emojiSize } from '../src/geometry.js';
 
 test('toCamel converts token names', () => {
   assert.equal(toCamel('food-halo-size'), 'foodHaloSize');
@@ -18,7 +19,8 @@ test('parseDuration returns milliseconds', () => {
 
 test('every token is declared in the theme CSS with a comment', () => {
   for (const t of TOKEN_DEFS) {
-    assert.ok(themeCSS.includes(`--_${t.name}: var(--snake-${t.name}, ${t.value});`), t.name);
+    const fallback = t.kind === 'color' ? `var(--_skin-${t.name}, ${t.value})` : t.value;
+    assert.ok(themeCSS.includes(`--_${t.name}: var(--snake-${t.name}, ${fallback});`), t.name);
     assert.ok(t.doc && t.doc.length > 5, `${t.name} needs a doc`);
   }
 });
@@ -40,4 +42,23 @@ test('head and tail default to auto; gap is read by a property that accepts nega
 test('a phone board keeps a floor even if board-share is invalid', () => {
   assert.match(themeCSS, /var\(--_board-share\); min-width: 50%/);
   assert.match(themeCSS, /var\(--_board-share\); min-height: 50%/);
+});
+
+test('only color tokens have the skin layer (--_skin-*), after --snake-* and before the default', () => {
+  for (const t of TOKEN_DEFS) {
+    const uses = themeCSS.includes(`var(--_skin-${t.name}`);
+    assert.equal(uses, t.kind === 'color', `${t.name} (${t.kind})`);
+  }
+});
+
+test('food-emoji-size is a share of the spacing: 75% by default, an invalid value falls back', () => {
+  const def = TOKEN_DEFS.find((t) => t.name === 'food-emoji-size');
+  assert.equal(def.kind, 'percentage');
+  assert.equal(def.value, '75%');
+  assert.equal(parsePercent('75%', def.value), 0.75);
+  assert.equal(parsePercent(' 50% ', def.value), 0.5);
+  assert.equal(parsePercent('120%', def.value), 1.2);
+  for (const bad of ['', 'auto', '-10%', '24px', 'calc(1% + 1%)', '%']) assert.equal(parsePercent(bad, def.value), 0.75, bad);
+  assert.equal(emojiSize(32, parsePercent('75%', def.value)), 24);
+  assert.equal(emojiSize(40, 0.75), 30);
 });

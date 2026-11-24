@@ -8,6 +8,9 @@ export function toCamel(name) {
   return name.replace(/-([a-z])/g, (m, letter) => letter.toUpperCase());
 }
 
+// "75%" -> 0.75. Anything that is not a plain non-negative percentage uses the `fallback` text.
+export const parsePercent = (text, fallback) => parseFloat(/^\s*\d*\.?\d+%\s*$/.test(text) ? text : fallback) / 100;
+
 export function parseDuration(text) {
   const first = String(text).split(',')[0].trim();
   const value = parseFloat(first);
@@ -57,7 +60,7 @@ export function readTokens(probe) {
       value = parseFloat(getComputedStyle(probe).marginLeft) || 0;
       probe.style.marginLeft = '';
     } else if (t.kind === 'percentage') {
-      continue; // Only the CSS uses --board-share (flex-basis); the code does not need the number.
+      value = parsePercent(getComputedStyle(probe).getPropertyValue(`--_${t.name}`), t.value);
     } else if (t.kind === 'time') {
       probe.style.transitionDuration = ref;
       value = parseDuration(getComputedStyle(probe).transitionDuration);

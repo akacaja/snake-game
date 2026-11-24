@@ -8,6 +8,9 @@ export function gridSize(w, h, spacing, min) {
   };
 }
 
+// Diameter of the emoji food before the grid scale: `share` (0.75 = 75%) of the spacing.
+export const emojiSize = (spacing, share) => spacing * share;
+
 // Factor k (0 to 1) that shrinks the dots when the grid is squeezed to fit the board, so the gap
 // between neighbor dots stays the same on screen: the head gets at most (fitted - gap) pixels.
 export function snakeFit({ fitted, scale, headSize, gap }) {

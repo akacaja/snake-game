@@ -1,6 +1,6 @@
 {
   "name": "snake-game",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "A snake game web component with no dependencies. Add the script, add the tag, play.",
   "type": "module",
   "license": "MIT",
@@ -9,6 +9,7 @@
     ".": "./src/snake-game.js",
     "./engine": "./src/engine.js",
     "./renderers": "./src/renderers.js",
+    "./skins/*": "./skins/*",
     "./standalone": "./dist/snake-game.js"
   },
   "scripts": {

@@ -2,8 +2,9 @@
 import { createEngine } from './engine.js';
 import { directionFromKey, directionFromSwipe } from './input.js';
 import { DEFAULT_TEXTS, formatText, pickPluralText, resolveLocale } from './text.js';
-import { dotDiameter, gridSize, snakeFit } from './geometry.js';
-import { themeCSS } from './theme.js';
+import { dotDiameter, emojiSize, gridSize, snakeFit } from './geometry.js';
+import { TOKEN_DEFS, themeCSS } from './theme.js';
+import { adoptQueue, createCanvasProbe, foodName, normalizeSkin, paletteCSS, pickFood, usableFoods } from './skins.js';
 import { createProbe, rawTokenKey, readTokens } from './read-tokens.js';
 import { drawFood, drawGrid, drawSnake } from './renderers.js';
 
@@ -26,6 +27,7 @@ const OPTION_VALUES = {
   'food-halo': ['soft', 'none'],
   intro: ['wave', 'cascade', 'none'],
   transitions: ['on', 'off'],
+  'skin-palette': ['on', 'off'],
 };
 const OPTION_DEFAULTS = {
   mode: 'modal',
@@ -35,16 +37,32 @@ const OPTION_DEFAULTS = {
   'food-halo': 'soft',
   intro: 'wave',
   transitions: 'on',
+  'skin-palette': 'on',
 };
 const PLURAL_FORMS = ['zero', 'one', 'two', 'few', 'many', 'other'];
 const TEXT_ATTRIBUTES = [
   'text-title', 'text-instructions', 'text-score', 'text-best', 'text-play-again',
-  'text-pause', 'text-resume', 'text-paused', 'text-close', 'text-ate',
+  'text-pause', 'text-resume', 'text-paused', 'text-close', 'text-ate', 'text-ate-food',
   ...PLURAL_FORMS.map((form) => `text-game-over-${form}`),
 ];
 
 // Node (the tests) has no HTMLElement; an empty class lets this file be imported there.
 const Base = typeof HTMLElement === 'undefined' ? class {} : HTMLElement;
+
+// Skins: registered by name. Emoji checks are cached for the whole page (they depend only on the device).
+const SKINS = new Map();
+const COLOR_TOKENS = TOKEN_DEFS.filter((t) => t.kind === 'color').map((t) => t.name);
+const EMOJI_CACHE = new Map();
+let canvasProbe = null;
+
+// Adds (or replaces) a skin: { foods: [{ emoji, names: { en, pt } }], palette: { 'color-token': 'value' } }.
+export function registerSkin(name, skin) {
+  const warn = (m) => console.warn(`<${TAG_NAME}> skin "${name}": ${m}`);
+  const clean = typeof name === 'string' && name ? normalizeSkin(skin, COLOR_TOKENS, warn) : (warn('the name must be a text that is not empty. Skipped.'), null);
+  if (clean) SKINS.set(name, clean);
+  return Boolean(clean);
+}
+adoptQueue(globalThis, registerSkin, (m) => console.warn(`<${TAG_NAME}> ${m}`));
 
 const clamp01 = (value) => Math.min(1, Math.max(0, value));
 const easeOut = (value) => 1 - (1 - clamp01(value)) ** 3;
@@ -71,7 +89,7 @@ const TEMPLATE = `
 
 export class SnakeGameElement extends Base {
   static get observedAttributes() {
-    return ['open', 'mode', ...TEXT_ATTRIBUTES];
+    return ['open', 'mode', 'skin', 'skin-palette', ...TEXT_ATTRIBUTES];
   }
 
   constructor() {
@@ -94,12 +112,18 @@ export class SnakeGameElement extends Base {
     this._best = 0;
     this._reduced = false;
     this._anchor = null;
+    this._skin = null;
+    this._foods = null;
+    this._food = null;
+    this._foodIndex = -1;
     this._resetTimes();
 
     const root = this.attachShadow({ mode: 'open' });
     const style = document.createElement('style');
     style.textContent = themeCSS;
     root.appendChild(style);
+    this._skinStyle = document.createElement('style');
+    root.appendChild(this._skinStyle);
     this._panelHost = document.createElement('div');
     this._panelHost.innerHTML = TEMPLATE;
     this._panel = this._panelHost.firstElementChild;
@@ -184,6 +208,7 @@ export class SnakeGameElement extends Base {
   // ---- lifecycle -----------------------------------------------------------------------
 
   connectedCallback() {
+    this._applySkin();
     if (this.hasAttribute('open')) this.open();
   }
 
@@ -201,6 +226,8 @@ export class SnakeGameElement extends Base {
       if (!this.isConnected) return;
       if (newValue !== null) this.open();
       else this.close();
+    } else if (name === 'skin' || name === 'skin-palette') {
+      this._applySkin();
     } else if (name === 'mode' && this._open && this._frameKind !== this._option('mode')) {
       // Mode changed while playing: close and reopen in the new frame.
       this.close();
@@ -244,6 +271,21 @@ export class SnakeGameElement extends Base {
       intro: this._reduced ? 'none' : this._option('intro'),
       transitions: this._reduced ? 'off' : this._option('transitions'),
     };
+  }
+
+  // Reads skin and skin-palette: puts the palette in its own <style> and re-rolls the food when the skin changes.
+  _applySkin() {
+    const name = this.getAttribute('skin');
+    const skin = (name && SKINS.get(name)) || null;
+    if (name && !skin && this._open) this._warnOnce(`skin-${name}`, `skin "${name}" is not registered. Using the default look.`);
+    const css = skin && this._option('skin-palette') === 'on' ? paletteCSS(skin.palette) : '';
+    if (css !== this._skinStyle.textContent) this._skinStyle.textContent = css;
+    if (skin !== this._skin) {
+      this._skin = skin;
+      this._foods = null;
+      this._foodIndex = -1;
+      this._foodKey = '';
+    }
   }
 
   _locale() {
@@ -528,7 +570,11 @@ export class SnakeGameElement extends Base {
       this._ghost = removedTail ? { ...removedTail, time: now } : null;
     });
     on('eat', ({ score, length }) => {
-      this._announce(formatText(this._text('ate', 'ate'), { score }));
+      // _food is still the one just eaten: the next one is only chosen when the next frame is drawn.
+      const food = this._food;
+      this._announce(food
+        ? formatText(this._text('ateFood', 'ate-food'), { food: foodName(food, this._locale()), score })
+        : formatText(this._text('ate', 'ate'), { score }));
       this._emit('snake-eat', { score, length });
     });
     on('score', ({ score }) => {
@@ -602,6 +648,7 @@ export class SnakeGameElement extends Base {
     if (!this._open) return;
     this._raf = requestAnimationFrame(this._frame);
 
+    this._applySkin();
     const key = rawTokenKey(this);
     if (key !== this._rawKey || !this._tokens) {
       this._rawKey = key;
@@ -690,12 +737,21 @@ export class SnakeGameElement extends Base {
         if (foodKey !== this._foodKey) {
           this._foodKey = foodKey;
           this._foodBorn = Math.max(now, this._introEnd);
+          this._food = null;
+          if (this._skin) {
+            canvasProbe = canvasProbe || createCanvasProbe();
+            this._foods = this._foods || usableFoods(this._skin.foods, canvasProbe, EMOJI_CACHE);
+            this._foodIndex = pickFood(this._foods.length, this._foodIndex);
+            this._food = this._foods[this._foodIndex] || null;
+          }
         }
+        const emoji = this._food ? this._food.emoji : null;
         const born = duration === 0 ? 1 : easeOut((now - this._foodBorn) / duration);
         const c = center(state.food.x, state.food.y);
         foodItem = {
           x: state.food.x, y: state.food.y, cx: c.x, cy: c.y,
-          size: tokens.foodSize * scale * born,
+          emoji,
+          size: (emoji ? emojiSize(tokens.spacing, tokens.foodEmojiSize) : tokens.foodSize) * scale * born,
           haloSize: tokens.foodHaloSize * scale * born,
         };
       }

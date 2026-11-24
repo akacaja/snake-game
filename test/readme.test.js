@@ -31,3 +31,16 @@ test('the two READMEs have the same structure', () => {
   });
   assert.deepEqual(shape(pt), shape(en));
 });
+
+test('no blank line inside a table, and the tables have the same rows in both READMEs', () => {
+  const tables = (text) => text.split('\n\n').filter((block) => block.startsWith('|')).map((b) => b.split('\n').length);
+  for (const [name, text] of [['README.md', en], ['README.pt-BR.md', pt]]) {
+    const lines = text.split('\n');
+    lines.forEach((line, i) => {
+      if (line.startsWith('|') && lines[i + 1] === '' && lines[i + 2] && lines[i + 2].startsWith('|')) {
+        assert.fail(`${name}:${i + 2} has a blank line inside a table`);
+      }
+    });
+  }
+  assert.deepEqual(tables(pt), tables(en));
+});

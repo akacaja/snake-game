@@ -1,5 +1,6 @@
 // Default drawing functions. They only use values from `scene` (see README): no literal colors or sizes.
 // A custom renderer has the same shape: (ctx, scene) => void.
+import { EMOJI_FONT } from './theme.js';
 
 const FULL_TURN = Math.PI * 2;
 
@@ -76,6 +77,20 @@ export function drawFood(ctx, scene) {
   const { tokens, options, foodItem, dpr } = scene;
   if (!foodItem || foodItem.size <= 0) return;
   ctx.save();
+  if (foodItem.emoji) {
+    // Skin food: centered by the measured box, since fonts differ in where they put the glyph. No glow.
+    ctx.font = `${foodItem.size}px ${EMOJI_FONT}`;
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'alphabetic';
+    const m = ctx.measureText(foodItem.emoji);
+    ctx.fillText(
+      foodItem.emoji,
+      foodItem.cx - (m.actualBoundingBoxRight - m.actualBoundingBoxLeft) / 2,
+      foodItem.cy + (m.actualBoundingBoxAscent - m.actualBoundingBoxDescent) / 2,
+    );
+    ctx.restore();
+    return;
+  }
   if (options.foodHalo === 'soft') {
     ctx.shadowColor = tokens.foodHaloColor;
     // Canvas shadows ignore the transform, so the blur is scaled by the pixel ratio.
