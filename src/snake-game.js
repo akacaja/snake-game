@@ -1,6 +1,6 @@
 // <snake-game>: the web component. Shadow DOM + canvas, modal or inline, keyboard and touch.
 import { createEngine } from './engine.js';
-import { directionFromKey, directionFromSwipe } from './input.js';
+import { directionFromKey, directionFromSwipe, isTyping } from './input.js';
 import { DEFAULT_TEXTS, formatText, pickPluralText, resolveLocale } from './text.js';
 import { dotDiameter, emojiSize, gridSize, snakeFit } from './geometry.js';
 import { TOKEN_DEFS, themeCSS } from './theme.js';
@@ -28,6 +28,7 @@ const OPTION_VALUES = {
   intro: ['wave', 'cascade', 'none'],
   transitions: ['on', 'off'],
   'skin-palette': ['on', 'off'],
+  leaderboard: ['on', 'off'],
 };
 const OPTION_DEFAULTS = {
   mode: 'modal',
@@ -38,6 +39,7 @@ const OPTION_DEFAULTS = {
   intro: 'wave',
   transitions: 'on',
   'skin-palette': 'on',
+  leaderboard: 'on',
 };
 const PLURAL_FORMS = ['zero', 'one', 'two', 'few', 'many', 'other'];
 const TEXT_ATTRIBUTES = [
@@ -62,7 +64,15 @@ export function registerSkin(name, skin) {
   if (clean) SKINS.set(name, clean);
   return Boolean(clean);
 }
-adoptQueue(globalThis, registerSkin, (m) => console.warn(`<${TAG_NAME}> ${m}`));
+const warnGlobal = (m) => console.warn(`<${TAG_NAME}> ${m}`);
+adoptQueue(globalThis, registerSkin, warnGlobal);
+
+// Addons (optional files, like the leaderboard): registered by name, never exported. The game only gives them a box.
+const ADDONS = new Map();
+adoptQueue(globalThis, (name, fn) => {
+  if (typeof fn !== 'function') throw new TypeError('an addon must be a function');
+  ADDONS.set(name, fn);
+}, warnGlobal, 'snakeGameAddons', 'addon');
 
 const clamp01 = (value) => Math.min(1, Math.max(0, value));
 const easeOut = (value) => 1 - (1 - clamp01(value)) ** 3;
@@ -116,6 +126,7 @@ export class SnakeGameElement extends Base {
     this._foods = null;
     this._food = null;
     this._foodIndex = -1;
+    this._addon = null;
     this._resetTimes();
 
     const root = this.attachShadow({ mode: 'open' });
@@ -420,6 +431,7 @@ export class SnakeGameElement extends Base {
   _onKey = (e) => {
     if (!this._open || e.ctrlKey || e.metaKey || e.altKey) return;
     const target = e.composedPath()[0];
+    if (isTyping(target)) return; // typing a name: no steering, no pause, no closing (the field handles Esc)
     const onButton = target && target.tagName === 'BUTTON';
     if (e.key === 'Escape') {
       e.preventDefault();
@@ -440,8 +452,9 @@ export class SnakeGameElement extends Base {
   };
 
   _onPointerDown(e) {
-    this._ui.board.focus({ preventScroll: true });
     const target = e.composedPath()[0];
+    if (target && target.closest && target.closest('.addon')) return; // an addon's box keeps its own focus and touches
+    this._ui.board.focus({ preventScroll: true });
     if (e.pointerType === 'mouse' || (target && target.tagName === 'BUTTON')) return;
     this._anchor = { x: e.clientX, y: e.clientY };
     if (this._ui.board.setPointerCapture) this._ui.board.setPointerCapture(e.pointerId);
@@ -526,6 +539,7 @@ export class SnakeGameElement extends Base {
   }
 
   _newGame(first) {
+    this._dropAddon();
     for (const off of this._offs) off();
     this._offs = [];
     const tokens = this._tokens;
@@ -588,7 +602,7 @@ export class SnakeGameElement extends Base {
     on('gameover', ({ score, reason }) => {
       this._updateUi();
       this._announce(this._ui.message.textContent);
-      this._ui.action.focus();
+      this._offerAddon(score);
       this._emit('snake-gameover', { score, best: this._best, reason });
     });
     on('pause', () => {
@@ -602,6 +616,43 @@ export class SnakeGameElement extends Base {
       this._updateUi();
       this._emit('snake-resume');
     });
+  }
+
+  // The leaderboard addon, if it should run for this score (more than 0, not turned off, file loaded).
+  _leaderboard(score) {
+    return (score > 0 && this._option('leaderboard') === 'on' && ADDONS.get('leaderboard')) || null;
+  }
+
+  // End of a game: gives the addon a box above "Play again" (it fills it and may hide the button), or focuses the button as always.
+  _offerAddon(score) {
+    const ui = this._ui;
+    const addon = this._leaderboard(score);
+    if (!addon) return ui.action.focus();
+    const box = document.createElement('div');
+    box.className = 'addon';
+    ui.overlay.insertBefore(box, ui.action);
+    this._addon = { box, off: null };
+    try {
+      const skip = () => { this._dropAddon(); ui.action.focus(); };
+      this._addon.off = addon(this, { box, action: ui.action, score, skip });
+    } catch (error) {
+      this._dropAddon();
+      ui.action.focus();
+      if (!this._warned.has('addon-failed')) {
+        this._warned.add('addon-failed');
+        console.error(`<${TAG_NAME}> the leaderboard addon failed. Playing without it.`, error);
+      }
+    }
+  }
+
+  // Cleans up the addon's box (and its cleanup function) and gives "Play again" back.
+  _dropAddon() {
+    const addon = this._addon;
+    if (!addon) return;
+    this._addon = null;
+    try { if (typeof addon.off === 'function') addon.off(); } catch { /* the box goes away anyway */ }
+    addon.box.remove();
+    this._ui.action.hidden = false;
   }
 
   _bestKey() {
@@ -635,6 +686,7 @@ export class SnakeGameElement extends Base {
     cancelAnimationFrame(this._raf);
     this._raf = 0;
     this._detachListeners();
+    this._dropAddon();
     for (const off of this._offs) off();
     this._offs = [];
     this._engine = null;

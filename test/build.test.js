@@ -169,3 +169,35 @@ test('the dist has no comment from src/ (only the header and the file markers)',
   // The CSS comments live inside template literals and must stay (the stylesheet is built from them).
   assert.ok(text.includes('/* Fills the container also in flex/grid rows'));
 });
+
+test('the dist does not contain the addons (they are optional files)', () => {
+  const text = readFileSync(distPath, 'utf8');
+  assert.ok(!text.includes("push(['leaderboard'"));
+  assert.ok(!text.includes('checkName'));
+  assert.ok(!text.includes('lb-field'));
+  // The game only has the hook: the addons queue and the box it gives to the addon.
+  assert.ok(text.includes('snakeGameAddons'));
+});
+
+test('addons queued before the dist loads, and later ones, are accepted; a bad item warns and the next ones still work', () => {
+  const { sandbox, warnings } = makeSandbox();
+  sandbox.snakeGameAddons = [['antes', () => {}], 'not a pair', ['sem-funcao', 5]];
+  runDist(sandbox);
+  assert.deepEqual(warnings.filter((m) => m.includes('addon')), [
+    '<snake-game> an addon in the queue must be [name, addon]. Skipped.',
+    '<snake-game> TypeError: an addon must be a function. Skipped.',
+  ]);
+  const before = warnings.length;
+  sandbox.snakeGameAddons.push(['depois', () => {}]);
+  assert.equal(warnings.length, before);
+  sandbox.snakeGameAddons.push(['ruim', null]);
+  assert.equal(warnings.length, before + 1);
+  assert.equal(Array.isArray(sandbox.snakeGameAddons), false);
+});
+
+test('the skin queue still works the same way with the generic queue helper', () => {
+  const { sandbox, warnings } = makeSandbox();
+  sandbox.snakeGameSkins = [5];
+  runDist(sandbox);
+  assert.deepEqual(warnings, ['<snake-game> a skin in the queue must be [name, skin]. Skipped.']);
+});

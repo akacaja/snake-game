@@ -59,15 +59,16 @@ export function paletteCSS(palette) {
 }
 
 // Skin files push [name, skin] to globalThis.snakeGameSkins, before or after the game loads.
-export function adoptQueue(target, register, warn = () => {}) {
-  const queue = target.snakeGameSkins || [];
+// Addon files do the same with [name, function] on globalThis.snakeGameAddons (`key` and `what` say which).
+export function adoptQueue(target, register, warn = () => {}, key = 'snakeGameSkins', what = 'skin') {
+  const queue = target[key] || [];
   if (!Array.isArray(queue)) return;
   // Each item on its own: a bad one warns and the next ones still register.
   const add = (...items) => items.forEach((item) => {
-    if (!Array.isArray(item)) return warn('a skin in the queue must be [name, skin]. Skipped.');
+    if (!Array.isArray(item)) return warn(`${/^[aeiou]/.test(what) ? 'an' : 'a'} ${what} in the queue must be [name, ${what}]. Skipped.`);
     try { register(item[0], item[1]); } catch (error) { warn(`${error}. Skipped.`); }
   });
-  target.snakeGameSkins = { push: add };
+  target[key] = { push: add };
   add(...queue);
 }
 

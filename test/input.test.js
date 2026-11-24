@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { directionFromKey, directionFromSwipe } from '../src/input.js';
+import { directionFromKey, directionFromSwipe, isTyping } from '../src/input.js';
 
 test('arrows and WASD map to directions, any case', () => {
   assert.equal(directionFromKey('ArrowUp'), 'up');
@@ -26,4 +26,10 @@ test('swipe uses the dominant axis', () => {
 test('swipe below the threshold gives null', () => {
   assert.equal(directionFromSwipe(10, 10, 24), null);
   assert.equal(directionFromSwipe(0, 0, 24), null);
+});
+
+test('isTyping is true for a text field and false for anything else', () => {
+  assert.equal(isTyping({ tagName: 'INPUT' }), true);
+  assert.equal(isTyping({ tagName: 'TEXTAREA' }), true);
+  for (const target of [{ tagName: 'BUTTON' }, { tagName: 'DIV' }, {}, null, undefined]) assert.equal(isTyping(target), false);
 });

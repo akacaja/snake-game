@@ -47,6 +47,9 @@ export const TOKEN_DEFS = [
   { name: 'font-size', kind: 'length', value: '14px', doc: 'Size of the texts.' },
   { name: 'focus-color', kind: 'color', value: '#111111', doc: 'Color of the keyboard focus outline.' },
   { name: 'button-size', kind: 'length', value: '44px', doc: 'Minimum size of buttons (touch target).' },
+  // Leaderboard (the optional addon)
+  { name: 'highlight-color', kind: 'color', value: 'var(--_focus-color)', doc: 'Color of your own name in the Top 10 (bold too). Default: the focus color. Keep 4.5:1 with the background.' },
+  { name: 'field-font-size', kind: 'length', value: '16px', doc: 'Text size of the name field. At least 16px, so iPhones do not zoom in when it gets focus.' },
   // Motion
   { name: 'duration', kind: 'time', value: '180ms', doc: 'Transitions: the tail tip shrinking (also the food appearing).' },
   { name: 'intro-duration', kind: 'time', value: '900ms', doc: 'Duration of the opening wave or cascade.' },

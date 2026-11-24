@@ -16,8 +16,12 @@ const LITERALS = [
   [/\b(transparent|black|white|red|green|blue|gray|grey|orange|yellow|purple|pink|brown|cyan|magenta|silver|gold|navy|teal)\b/i, 'color name'],
 ];
 
-test('no literal colors or sizes outside src/theme.js and skins/*.js', () => {
-  for (const file of DRAWING_FILES) {
+// Addons draw too (the leaderboard has a form and a list): they may only use the game tokens, as var(--_*).
+const ADDON_FILES = readdirSync(join(root, 'addons')).filter((f) => f.endsWith('.js')).map((f) => `addons/${f}`);
+
+test('no literal colors or sizes outside src/theme.js, skins/*.js and addons/*.js (the addons use only var(--_*))', () => {
+  assert.ok(ADDON_FILES.length > 0);
+  for (const file of [...DRAWING_FILES, ...ADDON_FILES]) {
     const lines = read(file).split('\n');
     lines.forEach((line, i) => {
       for (const [re, what] of LITERALS) {

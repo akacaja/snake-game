@@ -1,3 +1,4 @@
+/* snake-game | MIT (c) 2026 Carolina Cajazeira (@akacaja) */
 // Skin "natal" (Christmas) for <snake-game>: food emojis and a palette. Optional file.
 // Load it with <script src="skins/natal.js"></script>, before or after the game, then use skin="natal".
 (globalThis.snakeGameSkins = globalThis.snakeGameSkins || []).push(['natal', {

@@ -62,3 +62,12 @@ test('food-emoji-size is a share of the spacing: 75% by default, an invalid valu
   assert.equal(emojiSize(32, parsePercent('75%', def.value)), 24);
   assert.equal(emojiSize(40, 0.75), 30);
 });
+
+test('highlight-color follows the focus color by default and has the skin layer; field-font-size is 16px', () => {
+  const def = (name) => TOKEN_DEFS.find((t) => t.name === name);
+  assert.equal(def('highlight-color').kind, 'color');
+  assert.equal(def('highlight-color').value, 'var(--_focus-color)');
+  assert.ok(themeCSS.includes('--_highlight-color: var(--snake-highlight-color, var(--_skin-highlight-color, var(--_focus-color)));'));
+  assert.equal(def('field-font-size').kind, 'length');
+  assert.equal(def('field-font-size').value, '16px');
+});
