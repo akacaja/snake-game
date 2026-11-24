@@ -17,19 +17,21 @@ Por padrão o jogo começa fechado. O atributo `open` faz ele abrir sozinho, com
 
 Há duas formas. Escolha uma.
 
-**A. Um arquivo só (funciona com duplo clique, sem servidor).** Copie `dist/snake-game.js` para o seu site e carregue com uma tag de script normal. Ele registra `<snake-game>` e expõe um global `SnakeGame`. Tamanho: **14,7 KB** comprimido com gzip (`dist/snake-game.js`, medido com o zlib do Node, nível padrão).
+**A. Um arquivo só (funciona com duplo clique, sem servidor).** Copie `dist/snake-game.js` para o seu site e carregue com uma tag de script normal. Ele registra `<snake-game>` e expõe um global `SnakeGame`. Tamanho: **15,3 KB** comprimido com gzip (`dist/snake-game.js`, medido com o zlib do Node, nível padrão).
 
 ```html
 <script src="snake-game.js"></script>
 ```
 
-**B. Módulos ES.** Copie a pasta `src/` e importe. Isso precisa de um servidor web, porque os navegadores bloqueiam módulos em `file://`.
+**B. Módulos ES.** Copie a pasta `src/` (e `skins/` ou `addons/`, se usar esses extras) e importe. Isso precisa de um servidor web, porque os navegadores bloqueiam módulos em `file://`.
 
 ```html
 <script type="module" src="src/snake-game.js"></script>
 ```
 
 O arquivo `dist/snake-game.js` é gerado. Não edite. Ele não tem comentários (o código de `src/` tem). Depois de mudar qualquer coisa em `src/`, rode `npm run build`.
+
+Extras como skins e ranking são sempre arquivos opcionais: o arquivo principal nunca os inclui. O ranking é `addons/leaderboard.js`, com **6,5 KB** comprimido com gzip (veja [Ranking](#ranking)).
 
 Suporte de navegadores: o modal usa o elemento nativo `<dialog>`, então você precisa de um navegador de 2022 ou mais novo (Safari 15.4+, Firefox 98+, Chrome 99+). Quando a página é aberta por `file://`, alguns navegadores (o Safari em especial) podem não guardar a melhor pontuação.
 
@@ -83,6 +85,9 @@ Valores que não são válidos voltam ao padrão, com um aviso no console.
 | `max-speed` | número | `14` | Limite de velocidade. |
 | `start-length` | inteiro | `3` | Tamanho inicial da cobra. |
 | `best-key` | texto | `snake-game-best` | Chave do `localStorage` da melhor pontuação. Vazio desliga. |
+| `leaderboard` | `on` / `off` | `on` | `off` termina a partida como na versão 0.2.0. Só faz algo quando o arquivo do ranking está carregado. Lido no fim de cada partida. |
+| `leaderboard-url` | endereço | nenhum | Envia as pontuações a um serviço e mostra o Top 10 dele. Sem ele, nada sai do navegador. Veja [Ranking](#ranking). |
+| `leaderboard-key` | texto | `snake-game-leaderboard` | Começo das chaves do `localStorage` do ranking. Vazio não guarda nada. Precisa começar com uma letra ou um número: um valor que começa com `-` funciona como vazio e não guarda nada. Não use o mesmo valor do `best-key`. |
 
 ### Textos
 
@@ -128,6 +133,8 @@ Todos são `CustomEvent`s que sobem pela página (bubble) e atravessam o shadow 
 | `snake-score` | `{ score, best }` |
 | `snake-gameover` | `{ score, best, reason }` com `reason` sendo `wall`, `self` ou `full` |
 | `snake-pause`, `snake-resume`, `snake-restart` | nenhum |
+| `snake-leaderboard-save` | `{ name, score }`, quando um nome foi salvo (só com o arquivo do ranking) |
+| `snake-leaderboard-error` | `{ code }` com `code` sendo `format`, `personal_data`, `rejected`, `taken`, `rate_limited` ou `offline` (só com o arquivo do ranking) |
 
 Exceção: se o elemento for removido da página com o jogo aberto, ele ainda emite `snake-close`, mas o elemento já está fora da página, então o evento não chega ao `document`. Para pegar esse caso, escute no próprio elemento.
 
@@ -149,6 +156,8 @@ snake-game { --snake-color: rebeccapurple; --snake-spacing: 40px; }
 | `--snake-board-width`, `--snake-board-height`, `--snake-board-share` | Tamanho máximo do tabuleiro e a parte da tela do celular que ele ocupa (porcentagem, padrão `75%`) |
 | `--snake-text-color`, `--snake-font`, `--snake-font-size` | Textos |
 | `--snake-focus-color`, `--snake-button-size` | Contorno do foco do teclado, tamanho mínimo dos botões |
+| `--snake-highlight-color` | O seu próprio nome no Top 10 (também em negrito). Padrão: a cor do foco. Mantenha 4,5:1 com o fundo. Uma skin pode defini-la |
+| `--snake-field-font-size` | Tamanho do texto do campo de nome (padrão `16px`; mantenha 16px ou mais, para o iPhone não dar zoom) |
 | `--snake-duration`, `--snake-intro-duration` | Transições e entrada da grade |
 
 Por padrão, a cabeça é o espaçamento menos `--snake-gap` (30px) e a ponta do rabo é 80% da cabeça (24px, e acompanha uma cabeça que você definir), então o vão na tela entre a cabeça e a próxima bolinha é de 2px, mesmo quando a grade encolhe para caber num tabuleiro pequeno. Com `snake="taper"` o rabo afina e o vão cresce até cerca de 8px na ponta; com `snake="uniform"` é 2px em todo o corpo. `--snake-gap: 0` faz as bolinhas se encostarem e um valor negativo faz elas se sobreporem. Você ainda pode definir `--snake-head-size` e `--snake-tail-size` com valores fixos, como `16px` e `8px`.
@@ -180,6 +189,72 @@ Uma skin é um tema opcional: a comida vira um emoji (um diferente a cada vez, n
 
 - Seu próprio desenho: numa comida em emoji, `scene.foodItem.emoji` traz o texto (senão é `null`), e `foodItem.size` já é o tamanho do emoji.
 - Acessibilidade: quando a cobra come um emoji, o nome é lido no idioma da página (`text-ate-food`). Com `prefers-reduced-motion`, nada muda: o emoji aparece sem animação, como o resto.
+
+## Ranking
+
+Depois de uma partida com pontos, o jogo pede um nome de usuário e depois mostra o Top 10, com o seu nome destacado. É um arquivo opcional, como as skins, então não está no `dist/snake-game.js`. Sem o arquivo, ou com `leaderboard="off"`, o jogo termina exatamente como na versão 0.2.0.
+
+### Como carregar
+
+```html
+<script src="addons/leaderboard.js"></script>
+<script src="dist/snake-game.js"></script>
+<snake-game open></snake-game>
+```
+
+O arquivo pode vir antes ou depois do jogo. Com módulos ES, acrescente `import './addons/leaderboard.js';` (é um import só pelo efeito). Nos dois casos, `addons/leaderboard.js` precisa estar publicado junto com o resto do seu site. Ele tem **6,5 KB** comprimido com gzip.
+
+- **Local (padrão).** O Top 10 fica neste navegador (`localStorage`). Cada username guarda só a melhor pontuação. São usadas três chaves, todas começando com `leaderboard-key` (padrão `snake-game-leaderboard`): a lista (até 10 entradas), `-name` (o último username, para preencher o campo da próxima vez) e `-keys` (veja o próximo item). Com `leaderboard-key=""` nada é guardado (nem o último username) e a lista dura até a página fechar. Com a chave vazia e um serviço, cada salvamento conta como um navegador novo, então o serviço responde "nome em uso" para um nome salvo antes. Não há filtro de nomes ofensivos, porque só quem joga neste navegador vê a lista.
+- **Um serviço.** Com `leaderboard-url="https://scores.example.org/api"` o jogo envia a pontuação a esse serviço e mostra o Top 10 dele. Na primeira vez que um nome é salvo, o serviço devolve uma chave aleatória. O jogo a guarda no navegador (separada para cada endereço) e a envia nos próximos salvamentos, então só esse navegador consegue atualizar esse nome. Outro navegador recebe "Esse nome já está em uso". Os pedidos, as respostas e os códigos de erro estão em [docs/leaderboard-api.pt-BR.md](docs/leaderboard-api.pt-BR.md). Se o serviço estiver fora do ar, o jogo avisa e não trava.
+- **Seu próprio JavaScript.** Se você não quer o formato padrão, defina `game.leaderboard` (ele vale mais que o endereço).
+
+```js
+game.leaderboard = {
+  async submit({ name, score }) { return { top: [{ name, score }] }; }, // obrigatório: o Top 10, como lista de { name, score }
+  async top() { return [{ name: 'Ana', score: 12 }]; },                // opcional: usado quando o submit não traz o top
+};
+// Para recusar um nome, lance um erro com um código:
+// throw Object.assign(new Error('taken'), { code: 'taken' });
+```
+
+Os códigos são `format`, `personal_data`, `rejected`, `taken`, `rate_limited` e `offline`. Um código desconhecido, um erro sem código ou um `top` mal formado valem como `offline`, e uma chamada que demora mais de 5 segundos também.
+
+### Regras do username
+
+O jogo confere o nome na hora de salvar (e, depois do primeiro erro, a cada tecla). A primeira regra que falha decide a mensagem.
+
+- Nada de links, e-mails ou 6 ou mais números seguidos (separadores não escondem: `ana-12-34-56` é recusado). Um link é `http:` ou `https:`, `://`, `www.`, ou um final como `.com`, `.net` ou `.org`. `ana.maria` passa.
+- Só letras (com acentos), números, `_`, `-` e `.`. Sem espaços, emojis ou caracteres invisíveis.
+- De 3 a 12 caracteres, depois de tirar os espaços das pontas.
+- Começar com letra ou número, e ter pelo menos uma letra (`123`, `1_2` e `1.2.3` são recusados).
+
+"Carol", "carol", "cárol" e "ca_rol" são o mesmo nome: maiúsculas, acentos e os separadores `_`, `-` e `.` não contam.
+
+### Textos
+
+Os textos são atributos `text-*` como os outros, e acompanham uma mudança de `lang` ou do atributo enquanto o formulário está aberto.
+
+| Atributo | Padrão | Português |
+| --- | --- | --- |
+| `text-leaderboard-label` | `Username` | `Nome de usuário` |
+| `text-leaderboard-save` | `Save` | `Salvar` |
+| `text-leaderboard-skip` | `Skip` | `Pular` |
+| `text-leaderboard-title` | `Top 10` | `Top 10` |
+| `text-leaderboard-retry` | `Try again` | `Tentar de novo` |
+| `text-leaderboard-error-length` | `Use 3 to 12 characters.` | `Use de 3 a 12 caracteres.` |
+| `text-leaderboard-error-chars` | `Use only letters, numbers, _, - and .` | `Use só letras, números, _, - e .` |
+| `text-leaderboard-error-start` | `Start with a letter or number, and don't use only numbers.` | `Comece com letra ou número e não use só números.` |
+| `text-leaderboard-error-personal-data` | `Don't use links, emails or long numbers.` | `Não use links, e-mails ou números longos.` |
+| `text-leaderboard-error-rejected` | `Choose another name.` | `Escolha outro nome.` |
+| `text-leaderboard-error-taken` | `This name is already taken. Choose another one.` | `Esse nome já está em uso. Escolha outro.` |
+| `text-leaderboard-error-rate-limited` | `Too many tries. Wait a moment and try again.` | `Muitas tentativas. Espere um pouco e tente de novo.` |
+| `text-leaderboard-error-offline` | `Service unavailable. Try again later.` | `Serviço fora do ar. Tente mais tarde.` |
+
+### Privacidade e acessibilidade
+
+- Só o username, a pontuação e a chave são guardados ou enviados. Sem cookies, sem referrer, sem e-mail.
+- O campo tem rótulo, e o erro é anunciado assim que aparece. O erro também vem em texto em negrito e com borda mais grossa, nunca só por cor. Enter salva, Escape sai do campo (um segundo Escape fecha o jogo) e "Pular" termina a partida sem salvar.
+- O destaque do seu nome usa `--snake-highlight-color`, negrito e `aria-current`. A lista rola e o "Play again" continua visível, também em telas pequenas.
 
 ## Seu próprio desenho
 
@@ -213,7 +288,7 @@ Pelo arquivo único é `SnakeGame.createEngine(...)`. O global `SnakeGame` tamb�
 
 ## Controles e acessibilidade
 
-- Teclado: setas ou WASD, Espaço pausa, Escape fecha. As teclas só agem com o jogo aberto (no modo `inline`, enquanto ele tem o foco).
+- Teclado: setas ou WASD, Espaço pausa, Escape fecha. As teclas só agem com o jogo aberto (no modo `inline`, enquanto ele tem o foco). Enquanto você digita num campo de texto do jogo (como o campo de nome do ranking), as teclas só digitam: Enter salva e Escape sai do campo.
 - Toque: deslize o dedo. A página não rola enquanto você desliza sobre o tabuleiro.
 - O tabuleiro tem rótulo, pontuações e fim de jogo são anunciados, os botões são botões de verdade com pelo menos 44 px, e o contorno do foco é visível.
 - Com `prefers-reduced-motion`, nada se anima e o jogo abre pausado.
@@ -229,7 +304,7 @@ npm run serve:pages      # o mesmo, dentro de /snake-game/ como no GitHub Pages
 
 Quando o servidor liga, ele também mostra o endereço da sua rede (por exemplo `http://192.168.0.12:8000/demo/`). Abra num celular na mesma rede Wi-Fi para testar o jogo com o dedo.
 
-`python3 -m http.server 8000` também funciona. `examples/minimal.html` usa o arquivo único e abre com duplo clique. `demo/index.html` é uma página de teste com todas as opções, os tokens, um aviso de contraste e um registro de eventos.
+`python3 -m http.server 8000` também funciona. `examples/minimal.html` usa o arquivo único e abre com duplo clique. `demo/index.html` é uma página de teste com todas as opções, os tokens, um aviso de contraste e um registro de eventos. Ela também tem um serviço de ranking de mentira (`demo/fake-service.js`, dentro da página, nada vai para a rede) com estados para nome em uso, nome recusado, muitas tentativas, fora do ar e mais.
 
 Mudanças: veja o [CHANGELOG.md](CHANGELOG.md).
 

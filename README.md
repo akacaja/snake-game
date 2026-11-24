@@ -17,19 +17,21 @@ By default the game starts closed. The `open` attribute makes it open by itself,
 
 There are two ways. Pick one.
 
-**A. One file (works by double click, no server).** Copy `dist/snake-game.js` to your site and load it with a normal script tag. It registers `<snake-game>` and exposes a global `SnakeGame`. Size: **14.7 KB** gzipped (`dist/snake-game.js`, measured with Node's zlib, default level).
+**A. One file (works by double click, no server).** Copy `dist/snake-game.js` to your site and load it with a normal script tag. It registers `<snake-game>` and exposes a global `SnakeGame`. Size: **15.3 KB** gzipped (`dist/snake-game.js`, measured with Node's zlib, default level).
 
 ```html
 <script src="snake-game.js"></script>
 ```
 
-**B. ES modules.** Copy the `src/` folder and import it. This needs a web server, because browsers block modules on `file://`.
+**B. ES modules.** Copy the `src/` folder (and `skins/` or `addons/`, if you use those extras) and import it. This needs a web server, because browsers block modules on `file://`.
 
 ```html
 <script type="module" src="src/snake-game.js"></script>
 ```
 
 The file `dist/snake-game.js` is generated. Do not edit it. It has no comments (the code in `src/` has them). After changing anything in `src/`, run `npm run build`.
+
+Extras like skins and the leaderboard are always optional files: the main file never includes them. The leaderboard is `addons/leaderboard.js`, **6.5 KB** gzipped (see [Leaderboard](#leaderboard)).
 
 Browser support: the modal uses the native `<dialog>` element, so you need a browser from 2022 or newer (Safari 15.4+, Firefox 98+, Chrome 99+). When the page is opened through `file://`, some browsers (Safari in particular) may not save the best score.
 
@@ -83,6 +85,9 @@ Values that are not valid go back to the default, with one warning in the consol
 | `max-speed` | number | `14` | Speed limit. |
 | `start-length` | integer | `3` | Starting length of the snake. |
 | `best-key` | text | `snake-game-best` | `localStorage` key of the best score. Empty turns it off. |
+| `leaderboard` | `on` / `off` | `on` | `off` ends a game as in version 0.2.0. Only does something when the leaderboard file is loaded. Read at the end of each game. |
+| `leaderboard-url` | address | none | Sends the scores to a service and shows its Top 10. Without it, nothing leaves the browser. See [Leaderboard](#leaderboard). |
+| `leaderboard-key` | text | `snake-game-leaderboard` | Start of the `localStorage` keys of the leaderboard. Empty stores nothing. Must start with a letter or a number: a value that starts with `-` works as empty and stores nothing. Do not use the same value as `best-key`. |
 
 ### Texts
 
@@ -128,6 +133,8 @@ All are `CustomEvent`s that bubble and cross the shadow DOM. Data is in `event.d
 | `snake-score` | `{ score, best }` |
 | `snake-gameover` | `{ score, best, reason }` with `reason` as `wall`, `self` or `full` |
 | `snake-pause`, `snake-resume`, `snake-restart` | none |
+| `snake-leaderboard-save` | `{ name, score }`, when a name was saved (leaderboard file only) |
+| `snake-leaderboard-error` | `{ code }` with `code` as `format`, `personal_data`, `rejected`, `taken`, `rate_limited` or `offline` (leaderboard file only) |
 
 Exception: if the element is removed from the page while the game is open, it still emits `snake-close`, but the element is already out of the page, so the event does not reach `document`. To catch that case, listen on the element itself.
 
@@ -149,6 +156,8 @@ snake-game { --snake-color: rebeccapurple; --snake-spacing: 40px; }
 | `--snake-board-width`, `--snake-board-height`, `--snake-board-share` | Maximum board size, and the share of a phone screen the board takes (percentage, default `75%`) |
 | `--snake-text-color`, `--snake-font`, `--snake-font-size` | Texts |
 | `--snake-focus-color`, `--snake-button-size` | Keyboard focus outline, minimum button size |
+| `--snake-highlight-color` | Your own name in the Top 10 (bold too). Default: the focus color. Keep 4.5:1 with the background. A skin can set it |
+| `--snake-field-font-size` | Text size of the name field (default `16px`; keep it at 16px or more, so iPhones do not zoom in) |
 | `--snake-duration`, `--snake-intro-duration` | Transitions and grid entrance |
 
 By default the head is the spacing minus `--snake-gap` (30px) and the tip of the tail is 80% of the head (24px, and it follows a head you set by hand), so the space on screen between the head and the next dot is 2px, even when the grid shrinks to fit a small board. With `snake="taper"` the tail gets thinner and the space grows to about 8px at the tip; with `snake="uniform"` it is 2px along the whole body. `--snake-gap: 0` makes the dots touch and a negative value makes them overlap. You can still set `--snake-head-size` and `--snake-tail-size` to fixed values, like `16px` and `8px`.
@@ -180,6 +189,72 @@ A skin is an optional theme: the food becomes an emoji (a different one each tim
 
 - Your own drawing: for an emoji food, `scene.foodItem.emoji` holds the text (otherwise `null`), and `foodItem.size` is already the emoji size.
 - Accessibility: when the snake eats an emoji, the name is read in the language of the page (`text-ate-food`). With `prefers-reduced-motion`, nothing changes: the emoji appears without animation, like everything else.
+
+## Leaderboard
+
+After a game with points, the game asks for a username and then shows the Top 10, with your name highlighted. It is an optional file, like the skins, so it is not in `dist/snake-game.js`. Without the file, or with `leaderboard="off"`, the game ends exactly as in version 0.2.0.
+
+### How to load
+
+```html
+<script src="addons/leaderboard.js"></script>
+<script src="dist/snake-game.js"></script>
+<snake-game open></snake-game>
+```
+
+The file can come before or after the game. With ES modules, add `import './addons/leaderboard.js';` (it is a side-effect import). In both cases `addons/leaderboard.js` must be published together with the rest of your site. It is **6.5 KB** gzipped.
+
+- **Local (default).** The Top 10 lives in this browser (`localStorage`). Each username keeps only its best score. Three keys are used, all starting with `leaderboard-key` (default `snake-game-leaderboard`): the list (up to 10 entries), `-name` (the last username, to fill the field next time) and `-keys` (see the next point). With `leaderboard-key=""` nothing is stored (not even the last username) and the list lasts until the page closes. With an empty key and a service, each save counts as a new browser, so the service answers "name already taken" for a name saved before. There is no filter for offensive names, because only the people who play on this browser see the list.
+- **A service.** With `leaderboard-url="https://scores.example.org/api"` the game sends the score to that service and shows its Top 10. The first time a name is saved, the service returns a random key. The game keeps it in the browser (separately for each address) and sends it on the next saves, so only that browser can update that name. Another browser gets "This name is already taken". The requests, answers and error codes are in [docs/leaderboard-api.md](docs/leaderboard-api.md). If the service is down, the game says so and does not freeze.
+- **Your own JavaScript.** If you do not want the standard format, set `game.leaderboard` (it wins over the address).
+
+```js
+game.leaderboard = {
+  async submit({ name, score }) { return { top: [{ name, score }] }; }, // required: the Top 10, as a list of { name, score }
+  async top() { return [{ name: 'Ana', score: 12 }]; },                // optional: used when submit gives no top
+};
+// To refuse a name, throw an error with a code:
+// throw Object.assign(new Error('taken'), { code: 'taken' });
+```
+
+The codes are `format`, `personal_data`, `rejected`, `taken`, `rate_limited` and `offline`. An unknown code, an error without code or a bad `top` count as `offline`, and a call that takes more than 5 seconds too.
+
+### Username rules
+
+The game checks the name as the person saves (and, after the first error, at every key). The first rule that fails decides the message.
+
+- No links, e-mails or 6 or more digits in a row (separators do not hide them: `ana-12-34-56` is refused). A link is `http:` or `https:`, `://`, `www.`, or an ending like `.com`, `.net` or `.org`. `ana.maria` is fine.
+- Only letters (with accents), numbers, `_`, `-` and `.`. No spaces, emojis or invisible characters.
+- From 3 to 12 characters, after the spaces at the ends are removed.
+- Start with a letter or number, and have at least one letter (`123`, `1_2` and `1.2.3` are refused).
+
+"Carol", "carol", "cárol" and "ca_rol" are the same name: case, accents and the separators `_`, `-` and `.` do not count.
+
+### Texts
+
+The texts are `text-*` attributes like the others, and they follow a change of `lang` or of the attribute while the form is open.
+
+| Attribute | Default | Português |
+| --- | --- | --- |
+| `text-leaderboard-label` | `Username` | `Nome de usuário` |
+| `text-leaderboard-save` | `Save` | `Salvar` |
+| `text-leaderboard-skip` | `Skip` | `Pular` |
+| `text-leaderboard-title` | `Top 10` | `Top 10` |
+| `text-leaderboard-retry` | `Try again` | `Tentar de novo` |
+| `text-leaderboard-error-length` | `Use 3 to 12 characters.` | `Use de 3 a 12 caracteres.` |
+| `text-leaderboard-error-chars` | `Use only letters, numbers, _, - and .` | `Use só letras, números, _, - e .` |
+| `text-leaderboard-error-start` | `Start with a letter or number, and don't use only numbers.` | `Comece com letra ou número e não use só números.` |
+| `text-leaderboard-error-personal-data` | `Don't use links, emails or long numbers.` | `Não use links, e-mails ou números longos.` |
+| `text-leaderboard-error-rejected` | `Choose another name.` | `Escolha outro nome.` |
+| `text-leaderboard-error-taken` | `This name is already taken. Choose another one.` | `Esse nome já está em uso. Escolha outro.` |
+| `text-leaderboard-error-rate-limited` | `Too many tries. Wait a moment and try again.` | `Muitas tentativas. Espere um pouco e tente de novo.` |
+| `text-leaderboard-error-offline` | `Service unavailable. Try again later.` | `Serviço fora do ar. Tente mais tarde.` |
+
+### Privacy and accessibility
+
+- Only the username, the score and the key are stored or sent. No cookies, no referrer, no e-mail.
+- The field has a label, and the error is announced as soon as it appears. The error is also in bold text and a thicker border, never only a color. Enter saves, Escape leaves the field (a second Escape closes the game), and "Skip" ends the game without saving.
+- The highlight of your name uses `--snake-highlight-color`, bold text and `aria-current`. The list scrolls and "Play again" stays visible, also on small screens.
 
 ## Your own drawing
 
@@ -213,7 +288,7 @@ From the single file it is `SnakeGame.createEngine(...)`. The global `SnakeGame`
 
 ## Controls and accessibility
 
-- Keyboard: arrow keys or WASD, Space pauses, Escape closes. Keys only act while the game is open (in `inline` mode, while it has focus).
+- Keyboard: arrow keys or WASD, Space pauses, Escape closes. Keys only act while the game is open (in `inline` mode, while it has focus). While you type in a text field of the game (like the leaderboard name field), keys only type: Enter saves and Escape leaves the field.
 - Touch: swipe. The page does not scroll while you swipe over the board.
 - The board is labeled, scores and game over are announced, buttons are real buttons with at least 44 px, and the focus outline is visible.
 - With `prefers-reduced-motion`, nothing animates and the game opens paused.
@@ -229,7 +304,7 @@ npm run serve:pages      # same, under /snake-game/ like GitHub Pages
 
 When the server starts, it also prints your network address (for example `http://192.168.0.12:8000/demo/`). Open it on a phone on the same Wi-Fi to try the game with your finger.
 
-`python3 -m http.server 8000` works as well. `examples/minimal.html` uses the single file and opens by double click. `demo/index.html` is a test page with every option, the tokens, a contrast warning and an event log.
+`python3 -m http.server 8000` works as well. `examples/minimal.html` uses the single file and opens by double click. `demo/index.html` is a test page with every option, the tokens, a contrast warning and an event log. It also has a pretend leaderboard service (`demo/fake-service.js`, inside the page, nothing goes to the network) with states for name taken, name rejected, too many tries, offline and more.
 
 Changes: see [CHANGELOG.md](CHANGELOG.md).
 

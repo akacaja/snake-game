@@ -51,6 +51,22 @@
       </fieldset>
 
       <fieldset>
+        <legend>Leaderboard (next game over)</legend>
+        <label>ranking
+          <select id="lb-source">
+            <option value="local">local (this browser)</option>
+            <option value="fake">pretend service (inside this page)</option>
+            <option value="off">off (like version 0.2.0)</option>
+          </select>
+        </label>
+        <label>pretend service
+          <select id="lb-mode"></select>
+        </label>
+        <div class="buttons"><button type="button" id="lb-clear">Clear demo leaderboard</button></div>
+        <p class="hint" id="lb-status" role="status"></p>
+      </fieldset>
+
+      <fieldset>
         <legend>Apply on the next restart</legend>
         <label class="check"><input type="checkbox" id="opt-wrap"> wrap (cross the walls)</label>
         <label>cols <input type="number" id="opt-cols" min="2" placeholder="auto"></label>
@@ -88,9 +104,19 @@
   <script src="../skins/natal.js"></script>
   <script src="../skins/halloween.js"></script>
   <script src="../skins/carnaval.js"></script>
+  <!-- Optional addon: the leaderboard. This small script only lets the demo reuse the addon's username rules
+       in the pretend service (the real service must follow the same rules). The addon works without it. -->
+  <script>
+    (globalThis.snakeGameAddons = []).push = function (...items) {
+      for (const [name, fn] of items) if (name === 'leaderboard') globalThis.demoLeaderboardRules = fn.lib;
+      return Array.prototype.push.apply(this, items);
+    };
+  </script>
+  <script src="../addons/leaderboard.js"></script>
   <script type="module">
     import { registerSkin } from './../src/snake-game.js';
     import { contrastRatio } from './contrast.js';
+    import { FAKE_URL, MODES, installFakeService } from './fake-service.js';
 
     const game = document.getElementById('game');
     const $ = (id) => document.getElementById(id);
@@ -121,7 +147,7 @@
     // ---- token fields ----
     const TOKEN_FIELDS = [
       ['text-color', true], ['background', true], ['backdrop', true],
-      ['grid-color'], ['color'], ['food-color'], ['food-halo-color'],
+      ['grid-color'], ['color'], ['food-color'], ['food-halo-color'], ['highlight-color'],
       ['spacing'], ['grid-dot-size'], ['gap'], ['head-size'], ['tail-size'], ['food-size'], ['food-emoji-size'],
       ['board-share'], ['duration'], ['intro-duration'],
     ];
@@ -193,7 +219,52 @@
         $(id).value = value;
         $(id).dispatchEvent(new Event('input'));
       }
+      // The leaderboard texts: Portuguese ones (from the README) or back to the English defaults.
+      for (const [name, value] of Object.entries(LEADERBOARD_PT)) {
+        if (lang === 'pt-BR') game.setAttribute(`text-leaderboard-${name}`, value);
+        else game.removeAttribute(`text-leaderboard-${name}`);
+      }
     });
+
+    // ---- leaderboard: local, pretend service or off ----
+    const LEADERBOARD_PT = {
+      label: 'Nome de usuário',
+      save: 'Salvar',
+      skip: 'Pular',
+      title: 'Top 10',
+      retry: 'Tentar de novo',
+      'error-length': 'Use de 3 a 12 caracteres.',
+      'error-chars': 'Use só letras, números, _, - e .',
+      'error-start': 'Comece com letra ou número e não use só números.',
+      'error-personal-data': 'Não use links, e-mails ou números longos.',
+      'error-rejected': 'Escolha outro nome.',
+      'error-taken': 'Esse nome já está em uso. Escolha outro.',
+      'error-rate-limited': 'Muitas tentativas. Espere um pouco e tente de novo.',
+      'error-offline': 'Serviço fora do ar. Tente mais tarde.',
+    };
+    const rules = globalThis.demoLeaderboardRules;
+    const fakeState = { mode: 'works' };
+    // Without the addon file there is nothing to show: the controls say so.
+    const fake = rules ? installFakeService(FAKE_URL, { rules, storage: localStorage, state: fakeState }) : null;
+    for (const [value, label] of Object.entries(MODES)) $('lb-mode').add(new Option(label, value));
+    const leaderboardChanged = () => {
+      const source = $('lb-source').value;
+      if (source === 'off') game.setAttribute('leaderboard', 'off');
+      else game.removeAttribute('leaderboard');
+      if (source === 'fake') game.setAttribute('leaderboard-url', FAKE_URL);
+      else game.removeAttribute('leaderboard-url');
+      fakeState.mode = $('lb-mode').value;
+      $('lb-mode').disabled = source !== 'fake';
+      $('lb-status').textContent = rules ? '' : 'addons/leaderboard.js was not loaded: there is no leaderboard.';
+    };
+    $('lb-source').addEventListener('change', leaderboardChanged);
+    $('lb-mode').addEventListener('change', leaderboardChanged);
+    $('lb-clear').addEventListener('click', () => {
+      for (const key of ['snake-game-leaderboard', 'snake-game-leaderboard-name', 'snake-game-leaderboard-keys']) localStorage.removeItem(key);
+      if (fake) fake.clear();
+      $('lb-status').textContent = 'Demo leaderboard cleared (names, scores and keys).';
+    });
+    leaderboardChanged();
 
     // ---- custom renderer: outlined squares that only use tokens ----
     const customSnake = (ctx, scene) => {
@@ -228,7 +299,7 @@
 
     // ---- event log ----
     const log = $('log');
-    for (const type of ['open', 'close', 'eat', 'score', 'gameover', 'pause', 'resume', 'restart']) {
+    for (const type of ['open', 'close', 'eat', 'score', 'gameover', 'pause', 'resume', 'restart', 'leaderboard-save', 'leaderboard-error']) {
       game.addEventListener(`snake-${type}`, (e) => {
         const item = document.createElement('li');
         item.textContent = `snake-${type} ${e.detail ? JSON.stringify(e.detail) : ''}`;

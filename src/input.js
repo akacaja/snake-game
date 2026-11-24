@@ -1,4 +1,4 @@
-// Pure input helpers: key -> direction, swipe -> direction.
+// Pure input helpers: key -> direction, swipe -> direction, and the text-field check.
 
 const KEY_DIRECTIONS = {
   arrowup: 'up',
@@ -15,6 +15,9 @@ export function directionFromKey(key) {
   if (typeof key !== 'string') return null;
   return KEY_DIRECTIONS[key.toLowerCase()] || null;
 }
+
+// True when the key press goes to a text field: the game must leave it alone.
+export const isTyping = (target) => Boolean(target) && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA');
 
 export function directionFromSwipe(dx, dy, threshold = 24) {
   const ax = Math.abs(dx);

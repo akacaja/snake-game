@@ -2,6 +2,24 @@
 
 All notable changes to this project are listed here. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project uses [Semantic Versioning](https://semver.org/).
 
+## [0.3.0] - 2026-11-24
+
+### Added
+
+- Leaderboard, in the optional file `addons/leaderboard.js` (it is not in `dist/snake-game.js`, like the skins). After a game with points, the game asks for a username and shows the Top 10 with your name highlighted. The last username is remembered in the browser.
+- Username rules, checked on the spot: 3 to 12 characters, letters (with accents), numbers, `_`, `-` and `.`, starting with a letter or number, with at least one letter, and no links, e-mails or 6 or more digits in a row. "Carol", "cárol" and "ca_rol" are the same name.
+- Local ranking (default): the best score of each username, kept in this browser. Nothing leaves the browser without `leaderboard-url`.
+- Global ranking service: `leaderboard-url` sends the score to a service and shows its Top 10. Unique names use a key that the service returns the first time and the browser keeps. The service contract is in `docs/leaderboard-api.md` (and `docs/leaderboard-api.pt-BR.md`). `game.leaderboard` plugs in your own JavaScript instead.
+- Attributes `leaderboard` (`off` brings back the game of 0.2.0), `leaderboard-url` and `leaderboard-key`; texts `text-leaderboard-*`; events `snake-leaderboard-save` and `snake-leaderboard-error`; tokens `--snake-highlight-color` and `--snake-field-font-size`.
+- The queue `globalThis.snakeGameAddons`, so optional files can plug into the game.
+- The test page has a pretend leaderboard service (`demo/fake-service.js`, inside the page) with states for name taken, name rejected, too many tries, offline, slow and more.
+- Tests that limit the size of the main file (15.7 KB gzipped) and of the addon (6.5 KB gzipped).
+
+### Changed
+
+- `dist/snake-game.js` grew to about 15.3 KB gzipped, with the hook for addons. Keys no longer steer the snake, pause or close the game while you type in a text field of the game (like the leaderboard name field).
+- Addons are scanned by the check for literal colors and sizes: they may only use `var(--_*)`.
+
 ## [0.2.0] - 2026-11-24
 
 ### Added
@@ -51,3 +69,7 @@ All notable changes to this project are listed here. The format follows [Keep a 
 ## Next steps
 
 - A landing page at the site root will replace the temporary redirect in `index.html`.
+- The leaderboard server (global ranking), following `docs/leaderboard-api.md`.
+- A way to recover a name when its key is lost (browser data cleared, another device).
+- See the Top 10 without playing.
+- Show your own position when it is outside the Top 10.

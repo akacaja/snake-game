@@ -175,6 +175,18 @@ test('normalizeSkin asks the browser (CSS.supports) when it exists', () => {
   }
 });
 
+test('adoptQueue: another queue name and word (addons), and the skin queue is left alone', () => {
+  const seen = [];
+  const warnings = [];
+  const target = { snakeGameAddons: [['leaderboard', 1], 'bad'], snakeGameSkins: [['natal', 2]] };
+  adoptQueue(target, (name, fn) => seen.push([name, fn]), (m) => warnings.push(m), 'snakeGameAddons', 'addon');
+  assert.deepEqual(seen, [['leaderboard', 1]]);
+  assert.deepEqual(warnings, ['an addon in the queue must be [name, addon]. Skipped.']);
+  target.snakeGameAddons.push(['later', 3]);
+  assert.deepEqual(seen.at(-1), ['later', 3]);
+  assert.equal(target.snakeGameSkins.length, 1);
+});
+
 test('adoptQueue: a bad item warns and the next ones still register', () => {
   const seen = [];
   const warnings = [];

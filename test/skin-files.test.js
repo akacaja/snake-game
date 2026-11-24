@@ -70,5 +70,7 @@ for (const file of files) {
     assert.ok(contrastRatio(rgb(p.color), bg) >= 3, 'snake on the background');
     assert.ok(contrastRatio(rgb(p['food-color']), bg) >= 3, 'food on the background');
     assert.ok(contrastRatio(rgb(p['focus-color']), bg) >= 3, 'focus outline on the background');
+    // The leaderboard highlight (your own name) is text: it follows the focus color unless the skin sets its own.
+    assert.ok(contrastRatio(rgb(p['highlight-color'] || p['focus-color']), bg) >= 4.5, 'highlight on the background');
   });
 }

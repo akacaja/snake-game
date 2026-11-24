@@ -22,6 +22,7 @@ Criado pelo /agent-crew:new-project. Este arquivo traz as REGRAS DE USO do visua
 - Tipografia: fonte e tamanho vêm dos tokens `--snake-font` e `--snake-font-size`; o placar fica em negrito.
 - Formas: pontos redondos na grade e na cobra; botões em pílula; a comida é círculo ou quadrado, ou emoji, quando há skin.
 - Acessibilidade: contraste mínimo de 4.5:1 para texto; alvos de toque com pelo menos 44 px; todo elemento interativo acessível pelo teclado.
+- Cores e tamanhos: só em `src/theme.js`. As skins (`skins/*.js`) trazem só cores. Os addons (`addons/*.js`) usam só `var(--_*)` (os tokens do jogo), em medidas relativas (`rem`, `em`, `thin`, `medium`), sem cor nem `px` escritos.
 
 ## Skins (temas opcionais)
 
@@ -34,6 +35,17 @@ Cada skin troca a comida por emojis e traz uma paleta de 8 cores (cobra, grade, 
 | `carnaval` | 16,5:1 | 8,9:1 | 4,7:1 | 8,9:1 |
 
 Prioridade das cores: variáveis `--snake-*` do site, depois a skin (se `skin-palette` não for `off`), depois o padrão de `src/theme.js`. O tamanho do emoji é `--snake-food-emoji-size`, uma fração do espaçamento.
+
+## Ranking (addon opcional)
+
+O fim de jogo com ranking usa os botões em pílula de sempre (`.btn`, 44 px) e os mesmos tokens de texto. As regras abaixo valem para qualquer tela de ranking:
+
+- **Campo de nome:** borda `thin` na cor do texto, altura mínima `--snake-button-size`, fonte de pelo menos 16px (`--snake-field-font-size`, para o iPhone não dar zoom). O rótulo fica acima do campo.
+- **Erro:** embaixo do campo, em negrito, com a borda do campo passando de `thin` para `medium`. Nunca só pela cor. É anunciado como alerta, e o campo aponta para ele.
+- **Lista:** até 10 entradas, números tabulares, com rolagem quando a tela é baixa; o botão "Play again" fica sempre visível.
+- **Destaque do próprio nome:** `--snake-highlight-color` (padrão: a cor do foco) + negrito + `aria-current`, com contraste de pelo menos 4,5:1 com o fundo. A skin pode pintar esse token.
+- **Foco:** o campo recebe o foco ao abrir; depois de salvar, o foco vai para o título "Top 10".
+- **Celular:** o painel rola quando o teclado ou a tela baixa não deixam tudo à mostra; não há `@media` novo.
 
 ## Referências visuais
 
