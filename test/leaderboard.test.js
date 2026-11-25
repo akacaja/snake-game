@@ -374,3 +374,28 @@ test('an empty leaderboard-key stores and reads nothing: not the list, not -name
   l.store.set('mine-name', 'Carol');
   assert.equal(storage.data['mine-name'], 'Carol');
 });
+
+test('a leaderboard-key that starts with "-" works as empty: memory only, nothing stored, one warning per page', async () => {
+  const storage = memoryStorage();
+  const { lib: l, warnings } = load({ localStorage: storage, fetch: fakeFetch([[201, { key: KEY, top: TOP }]]) });
+  const game = gameWith({ 'leaderboard-key': '-x' });
+  const backend = l.localBackend(game);
+  await backend.submit({ name: 'Ana', score: 3 });
+  const result = await backend.submit({ name: 'Bia', score: 2 });
+  assert.equal(result.top.length, 2, 'the list is kept in memory');
+  assert.deepEqual(storage.calls.set, [], 'setItem is never called');
+  await l.urlBackend(game, ADDRESS).submit({ name: 'Carol', score: 1 });
+  assert.deepEqual(storage.calls.set, []);
+  assert.equal(storage.data['-keys'], undefined);
+  const mine = warnings.filter((m) => m.includes('"-x"'));
+  assert.equal(mine.length, 1);
+  assert.match(mine[0], /^snake-game leaderboard: leaderboard-key "-x" starts with "-"/);
+});
+
+test('an empty key and a normal key give no warning', async () => {
+  const { lib: l, warnings } = load({ localStorage: memoryStorage() });
+  await l.localBackend(gameWith({ 'leaderboard-key': '' })).submit({ name: 'Ana', score: 3 });
+  await l.localBackend(gameWith({ 'leaderboard-key': 'mine' })).submit({ name: 'Ana', score: 3 });
+  await l.localBackend(gameWith()).submit({ name: 'Ana', score: 3 });
+  assert.deepEqual(warnings, []);
+});

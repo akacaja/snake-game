@@ -1,3 +1,4 @@
+/* snake-game | MIT (c) 2026 Carolina Cajazeira (@akacaja) */
 // Skins without the DOM (testable in Node): picking, emoji check, validation, palette CSS.
 import { EMOJI_FONT, EMOJI_PROBE_SIZE } from './theme.js';
 
@@ -39,6 +40,7 @@ export function normalizeSkin(skin, colorNames, warn) {
   if (!skin || typeof skin !== 'object') return (warn('a skin must be an object. Skipped.'), null);
   const text = (v) => typeof v === 'string' && v.trim();
   const keep = (ok, what) => Boolean(ok) || (warn(`${what}. Skipped.`), false);
+  if (skin.foods != null) keep(Array.isArray(skin.foods), 'foods must be a list');
   const foods = (Array.isArray(skin.foods) ? skin.foods : []).filter((f) => keep(f && text(f.emoji) && f.names && typeof f.names === 'object' && Object.values(f.names).some(text), 'a food needs an emoji and a name'));
   const palette = {};
   const given = skin.palette;

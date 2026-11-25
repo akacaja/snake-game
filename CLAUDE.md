@@ -7,10 +7,10 @@ Instruções que o Claude lê sempre que abre este projeto.
 <!-- Preenchido pelo /agent-crew:new-project. Ajuste à mão quando precisar. -->
 - **O que é:** Um jogo da cobrinha.
 - **Tecnologias:** JavaScript puro (módulos ES), Web Component com shadow DOM e canvas, sem dependências. Node.js só para testes, build e servidor local.
-- **Estrutura de pastas:** `src/` (código e tema em `src/theme.js`), `dist/` (arquivo único gerado), `test/`, `scripts/`, `demo/`, `examples/`, `context/` (prints em `context/prototype/`) e `.crew/`.
+- **Estrutura de pastas:** `src/` (código e tema em `src/theme.js`; os originais dos addons em `src/addons/` e das skins em `src/skins/`), `dist/` (arquivo único gerado), `addons/` e `skins/` (gerados a partir de `src/addons/` e `src/skins/`), `test/`, `scripts/`, `demo/`, `examples/`, `context/` (prints em `context/prototype/`) e `.crew/`.
 - `.crew/` e `context/prototype/` existem só no computador de quem usa o agent-crew; não vão para o repositório.
 - **Comandos:** testes `npm test` · lint `a definir` · build `npm run build` · rodar localmente `node scripts/serve.js` (http://localhost:8000/demo/)
-- **Regra do build:** depois de mudar qualquer arquivo de `src/`, rode `npm run build` e inclua o `dist/` no mesmo commit. O `npm test` falha se o `dist/` estiver desatualizado.
+- **Regra do build:** depois de mudar qualquer arquivo de `src/` (inclusive `src/addons/` e `src/skins/`), rode `npm run build` e inclua `dist/`, `addons/` e `skins/` no mesmo commit. O `npm test` falha se algum deles estiver desatualizado.
 - **Regra do tema:** cores e tamanhos só em `src/theme.js`.
 
 ## Quem está usando

@@ -1,3 +1,4 @@
+/* snake-game | MIT (c) 2026 Carolina Cajazeira (@akacaja) */
 // Reads the resolved theme tokens from a host element.
 // The host exposes `--_<name>` (see theme.js). A hidden probe element inside the shadow DOM
 // lets the browser resolve them: any CSS color, rem, calc(), min() or var() works.

@@ -9,6 +9,7 @@ import { normalizeSkin } from '../src/skins.js';
 import { contrastRatio } from '../demo/contrast.js';
 
 const root = resolve(fileURLToPath(new URL('..', import.meta.url)));
+// The tests run the generated files (skins/), the ones the people load. The sources are in src/skins/.
 const dir = join(root, 'skins');
 const files = readdirSync(dir).filter((f) => f.endsWith('.js')).sort();
 const colorNames = TOKEN_DEFS.filter((t) => t.kind === 'color').map((t) => t.name);
@@ -28,8 +29,9 @@ const EXPECTED = {
   'carnaval.js': ['\u{1F483}', '\u{1F389}', '\u{1F38A}', '\u{1F46F}‍♂️', '\u{1FA85}', '\u{1F57A}'],
 };
 
-test('there are exactly the three skin files', () => {
+test('there are exactly the three skin files, in the sources and in the generated folder', () => {
   assert.deepEqual(files, ['carnaval.js', 'halloween.js', 'natal.js']);
+  assert.deepEqual(readdirSync(join(root, 'src/skins')).filter((f) => f.endsWith('.js')).sort(), files);
 });
 
 for (const file of files) {

@@ -17,7 +17,7 @@ Por padrão o jogo começa fechado. O atributo `open` faz ele abrir sozinho, com
 
 Há duas formas. Escolha uma.
 
-**A. Um arquivo só (funciona com duplo clique, sem servidor).** Copie `dist/snake-game.js` para o seu site e carregue com uma tag de script normal. Ele registra `<snake-game>` e expõe um global `SnakeGame`. Tamanho: **15,3 KB** comprimido com gzip (`dist/snake-game.js`, medido com o zlib do Node, nível padrão).
+**A. Um arquivo só (funciona com duplo clique, sem servidor).** Copie `dist/snake-game.js` para o seu site e carregue com uma tag de script normal. Ele registra `<snake-game>` e expõe um global `SnakeGame`. Tamanho: **15,4 KB** comprimido com gzip (`dist/snake-game.js`, medido com o zlib do Node, nível padrão).
 
 ```html
 <script src="snake-game.js"></script>
@@ -29,9 +29,9 @@ Há duas formas. Escolha uma.
 <script type="module" src="src/snake-game.js"></script>
 ```
 
-O arquivo `dist/snake-game.js` é gerado. Não edite. Ele não tem comentários (o código de `src/` tem). Depois de mudar qualquer coisa em `src/`, rode `npm run build`.
+O arquivo `dist/snake-game.js` é gerado. Não edite. Ele não tem comentários (o código de `src/` tem). `addons/` e `skins/` também são gerados, a partir de `src/addons/` e `src/skins/`. Depois de mudar qualquer coisa em `src/`, rode `npm run build`.
 
-Extras como skins e ranking são sempre arquivos opcionais: o arquivo principal nunca os inclui. O ranking é `addons/leaderboard.js`, com **6,5 KB** comprimido com gzip (veja [Ranking](#ranking)).
+Extras como skins e ranking são sempre arquivos opcionais: o arquivo principal nunca os inclui. O ranking é `addons/leaderboard.js`, com **6,4 KB** comprimido com gzip (veja [Ranking](#ranking)).
 
 Suporte de navegadores: o modal usa o elemento nativo `<dialog>`, então você precisa de um navegador de 2022 ou mais novo (Safari 15.4+, Firefox 98+, Chrome 99+). Quando a página é aberta por `file://`, alguns navegadores (o Safari em especial) podem não guardar a melhor pontuação.
 
@@ -72,8 +72,8 @@ Valores que não são válidos voltam ao padrão, com um aviso no console.
 | `mode` | `modal` / `inline` | `modal` | Sobre a página, ou no lugar da tag. Mudar com o jogo aberto fecha e reabre o jogo (emite `snake-close` e `snake-open`). |
 | `grid` | `dots` / `squares` / `lines` / `none` | `dots` | Pontos, quadradinhos preenchidos, papel quadriculado, ou nada. |
 | `snake` | `taper` / `uniform` | `taper` | O corpo fica mais fino em direção à cauda, ou mantém o mesmo tamanho. |
-| `food` | `circle` / `square` | `circle` | Forma da comida. |
-| `food-halo` | `soft` / `none` | `soft` | Brilho em volta da comida. |
+| `food` | `circle` / `square` | `circle` | Forma da comida (não vale para a comida emoji). |
+| `food-halo` | `soft` / `none` | `soft` | Brilho em volta da comida (não vale para a comida emoji). |
 | `intro` | `wave` / `cascade` / `none` | `wave` | Como a grade aparece quando o jogo abre. |
 | `transitions` | `on` / `off` | `on` | Encolhimento suave da ponta da cauda. |
 | `skin` | nome de uma skin | nenhuma | Tema da comida (emoji) e das cores. Veja [Skins](#skins). |
@@ -87,7 +87,7 @@ Valores que não são válidos voltam ao padrão, com um aviso no console.
 | `best-key` | texto | `snake-game-best` | Chave do `localStorage` da melhor pontuação. Vazio desliga. |
 | `leaderboard` | `on` / `off` | `on` | `off` termina a partida como na versão 0.2.0. Só faz algo quando o arquivo do ranking está carregado. Lido no fim de cada partida. |
 | `leaderboard-url` | endereço | nenhum | Envia as pontuações a um serviço e mostra o Top 10 dele. Sem ele, nada sai do navegador. Veja [Ranking](#ranking). |
-| `leaderboard-key` | texto | `snake-game-leaderboard` | Começo das chaves do `localStorage` do ranking. Vazio não guarda nada. Precisa começar com uma letra ou um número: um valor que começa com `-` funciona como vazio e não guarda nada. Não use o mesmo valor do `best-key`. |
+| `leaderboard-key` | texto | `snake-game-leaderboard` | Começo das chaves do `localStorage` do ranking. Vazio não guarda nada. Precisa começar com uma letra ou um número: um valor que começa com `-` funciona como vazio (nada é guardado, a lista dura até a página fechar) e dá um aviso no console. Não use o mesmo valor do `best-key`. |
 
 ### Textos
 
@@ -160,7 +160,7 @@ snake-game { --snake-color: rebeccapurple; --snake-spacing: 40px; }
 | `--snake-field-font-size` | Tamanho do texto do campo de nome (padrão `16px`; mantenha 16px ou mais, para o iPhone não dar zoom) |
 | `--snake-duration`, `--snake-intro-duration` | Transições e entrada da grade |
 
-Por padrão, a cabeça é o espaçamento menos `--snake-gap` (30px) e a ponta do rabo é 80% da cabeça (24px, e acompanha uma cabeça que você definir), então o vão na tela entre a cabeça e a próxima bolinha é de 2px, mesmo quando a grade encolhe para caber num tabuleiro pequeno. Com `snake="taper"` o rabo afina e o vão cresce até cerca de 8px na ponta; com `snake="uniform"` é 2px em todo o corpo. `--snake-gap: 0` faz as bolinhas se encostarem e um valor negativo faz elas se sobreporem. Você ainda pode definir `--snake-head-size` e `--snake-tail-size` com valores fixos, como `16px` e `8px`.
+Por padrão, a cabeça é o espaçamento menos `--snake-gap` (30px) e a ponta do rabo é 80% da cabeça (24px, e acompanha uma cabeça que você definir), então o vão na tela entre a cabeça e a próxima bolinha é de 2px, mesmo quando a grade encolhe para caber num tabuleiro pequeno. A cabeça automática nunca fica menor que 20% de uma casa; uma cabeça que você define à mão continua como está. Com `snake="taper"` o rabo afina e o vão cresce até cerca de 8px na ponta; com `snake="uniform"` é 2px em todo o corpo. `--snake-gap: 0` faz as bolinhas se encostarem e um valor negativo faz elas se sobreporem. Você ainda pode definir `--snake-head-size` e `--snake-tail-size` com valores fixos, como `16px` e `8px`.
 
 No celular (tela de toque, lado menor até 540px), no modo modal, o tabuleiro ocupa `--snake-board-share` da tela: 75% da largura com o celular deitado (placar e botões à direita) e 75% da altura com o celular em pé (placar em cima). Girar o celular mantém a partida. Computadores, tablets e o modo `inline` mantêm o layout normal.
 
@@ -178,7 +178,9 @@ Uma skin é um tema opcional: a comida vira um emoji (um diferente a cada vez, n
 
 - Cores: as suas variáveis `--snake-*` vencem, depois vêm as cores da skin, depois os padrões. `skin-palette="off"` mantém as suas cores e usa só os emojis.
 - Um emoji que o aparelho não consegue mostrar fica fora do sorteio. Se nenhum puder ser mostrado, aparece o círculo ou quadrado normal (com a cor de comida da paleta). Um nome que não está registrado, por exemplo porque o arquivo não carregou, dá um aviso no console e o jogo normal.
-- Sua própria skin: adicione `[nome, skin]` em `globalThis.snakeGameSkins` (funciona em qualquer ordem, também com módulos ES) ou chame `SnakeGame.registerSkin(nome, skin)`, que devolve `true` ou `false`. A paleta aceita só tokens de cor, sem o prefixo `--snake-`. Cada comida precisa de um emoji e de um nome (`en` e `pt`, por exemplo). O que não for válido é ignorado, com um aviso.
+- `food` e `food-halo` só mudam o círculo ou o quadrado: a comida emoji mantém a própria forma e não tem brilho.
+- Navegadores com proteção contra fingerprinting (por exemplo o Firefox com `privacy.resistFingerprinting`, o Brave ou o Tor Browser) podem alterar o teste no canvas que vê quais emojis o aparelho mostra. Aí um emoji pode ficar de fora (aparece o círculo ou o quadrado normal) ou aparecer como um quadrado vazio.
+- Sua própria skin: adicione `[nome, skin]` em `globalThis.snakeGameSkins` (funciona em qualquer ordem, também com módulos ES) ou chame `SnakeGame.registerSkin(nome, skin)`, que devolve `true` ou `false`. A paleta aceita só tokens de cor, sem o prefixo `--snake-`. Cada comida precisa de um emoji e de um nome (`en` e `pt`, por exemplo). O que não for válido é ignorado, com um aviso. `foods` que não é uma lista é ignorado, com um aviso.
 
 ```js
 (globalThis.snakeGameSkins = globalThis.snakeGameSkins || []).push(['pizza', {
@@ -194,6 +196,8 @@ Uma skin é um tema opcional: a comida vira um emoji (um diferente a cada vez, n
 
 Depois de uma partida com pontos, o jogo pede um nome de usuário e depois mostra o Top 10, com o seu nome destacado. É um arquivo opcional, como as skins, então não está no `dist/snake-game.js`. Sem o arquivo, ou com `leaderboard="off"`, o jogo termina exatamente como na versão 0.2.0.
 
+Num celular deitado (só no modo modal), quando o teclado deixa pouco espaço, aparece acima do teclado só a linha com o nome de usuário, o Save e o Skip, e o tabuleiro e o placar voltam quando o teclado fecha. Depois de salvar, o teclado fecha e o seu nome fica à vista. Em pé, no computador e no modo inline, nada muda.
+
 ### Como carregar
 
 ```html
@@ -202,9 +206,9 @@ Depois de uma partida com pontos, o jogo pede um nome de usuário e depois mostr
 <snake-game open></snake-game>
 ```
 
-O arquivo pode vir antes ou depois do jogo. Com módulos ES, acrescente `import './addons/leaderboard.js';` (é um import só pelo efeito). Nos dois casos, `addons/leaderboard.js` precisa estar publicado junto com o resto do seu site. Ele tem **6,5 KB** comprimido com gzip.
+O arquivo pode vir antes ou depois do jogo. Com módulos ES, acrescente `import './addons/leaderboard.js';` (é um import só pelo efeito). Nos dois casos, `addons/leaderboard.js` precisa estar publicado junto com o resto do seu site. Ele tem **6,4 KB** comprimido com gzip.
 
-- **Local (padrão).** O Top 10 fica neste navegador (`localStorage`). Cada username guarda só a melhor pontuação. São usadas três chaves, todas começando com `leaderboard-key` (padrão `snake-game-leaderboard`): a lista (até 10 entradas), `-name` (o último username, para preencher o campo da próxima vez) e `-keys` (veja o próximo item). Com `leaderboard-key=""` nada é guardado (nem o último username) e a lista dura até a página fechar. Com a chave vazia e um serviço, cada salvamento conta como um navegador novo, então o serviço responde "nome em uso" para um nome salvo antes. Não há filtro de nomes ofensivos, porque só quem joga neste navegador vê a lista.
+- **Local (padrão).** O Top 10 fica neste navegador (`localStorage`). Cada username guarda só a melhor pontuação. São usadas três chaves, todas começando com `leaderboard-key` (padrão `snake-game-leaderboard`): a lista (até 10 entradas), `-name` (o último username, para preencher o campo da próxima vez) e `-keys` (veja o próximo item). Com `leaderboard-key=""` nada é guardado (nem o último username) e a lista dura até a página fechar. Com a chave vazia e um serviço, cada salvamento conta como um navegador novo, então o serviço responde "nome em uso" para um nome salvo antes (o mesmo vale para um valor que começa com `-`). Não há filtro de nomes ofensivos, porque só quem joga neste navegador vê a lista.
 - **Um serviço.** Com `leaderboard-url="https://scores.example.org/api"` o jogo envia a pontuação a esse serviço e mostra o Top 10 dele. Na primeira vez que um nome é salvo, o serviço devolve uma chave aleatória. O jogo a guarda no navegador (separada para cada endereço) e a envia nos próximos salvamentos, então só esse navegador consegue atualizar esse nome. Outro navegador recebe "Esse nome já está em uso". Os pedidos, as respostas e os códigos de erro estão em [docs/leaderboard-api.pt-BR.md](docs/leaderboard-api.pt-BR.md). Se o serviço estiver fora do ar, o jogo avisa e não trava.
 - **Seu próprio JavaScript.** Se você não quer o formato padrão, defina `game.leaderboard` (ele vale mais que o endereço).
 
@@ -297,10 +301,12 @@ Pelo arquivo único é `SnakeGame.createEngine(...)`. O global `SnakeGame` tamb�
 
 ```sh
 npm test                 # testes automáticos (Node, sem dependências)
-npm run build            # gera de novo o dist/snake-game.js
+npm run build            # gera de novo o dist/snake-game.js, addons/ e skins/
 node scripts/serve.js    # http://localhost:8000/demo/ e /examples/module.html
 npm run serve:pages      # o mesmo, dentro de /snake-game/ como no GitHub Pages
 ```
+
+Para mudar uma skin ou um addon, edite em `src/skins/` ou `src/addons/` e rode `npm run build`.
 
 Quando o servidor liga, ele também mostra o endereço da sua rede (por exemplo `http://192.168.0.12:8000/demo/`). Abra num celular na mesma rede Wi-Fi para testar o jogo com o dedo.
 

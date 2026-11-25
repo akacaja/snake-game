@@ -1,6 +1,4 @@
-/* snake-game | MIT (c) 2026 Carolina Cajazeira (@akacaja) */
-// Skin "halloween" for <snake-game>: food emojis and a palette. Optional file.
-// Load it with <script src="skins/halloween.js"></script>, before or after the game, then use skin="halloween".
+/* snake-game v0.3.1 | MIT (c) 2026 Carolina Cajazeira (@akacaja) | Generated from src/skins/halloween.js. Do not edit. */
 (globalThis.snakeGameSkins = globalThis.snakeGameSkins || []).push(['halloween', {
   foods: [
     { emoji: '👻', names: { en: 'ghost', pt: 'fantasma' } },
@@ -12,13 +10,13 @@
     { emoji: '🍫', names: { en: 'chocolate bar', pt: 'chocolate' } },
   ],
   palette: {
-    color: '#ff8a1f', // snake: pumpkin
-    'grid-color': '#3a2f4a', // grid: dusk purple
-    background: '#1b1426', // board: night
-    backdrop: 'rgb(27 20 38 / 0.94)', // behind the game in modal mode
-    'text-color': '#f5ecff', // texts
-    'focus-color': '#ff8a1f', // keyboard focus outline
-    'food-color': '#a855f7', // food circle, if no emoji can be shown
-    'food-halo-color': 'rgb(168 85 247 / 0.35)', // glow of that circle
+    color: '#ff8a1f',
+    'grid-color': '#3a2f4a',
+    background: '#1b1426',
+    backdrop: 'rgb(27 20 38 / 0.94)',
+    'text-color': '#f5ecff',
+    'focus-color': '#ff8a1f',
+    'food-color': '#a855f7',
+    'food-halo-color': 'rgb(168 85 247 / 0.35)',
   },
 }]);

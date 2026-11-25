@@ -2,6 +2,25 @@
 
 All notable changes to this project are listed here. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project uses [Semantic Versioning](https://semver.org/).
 
+## [0.3.1] - 2026-11-25
+
+### Fixed
+
+- The leaderboard on a phone lying down with the keyboard open: when there is little room above the keyboard, only the row with the username, Save and Skip is shown. After saving, the keyboard closes and your name is in view. Upright, on a computer and in inline mode, nothing changes.
+- A `leaderboard-key` that starts with `-` now works as an empty key (nothing is stored, the list lasts until the page closes), with one warning in the console, instead of silently storing nothing.
+- The snake no longer disappears with a big `--snake-gap`: the automatic head is never smaller than 20% of a cell (a head set by hand stays as it is).
+
+### Changed
+
+- `addons/` and `skins/` are now generated from `src/addons/` and `src/skins/`, without comments (smaller files). Edit the files in `src/`, then run `npm run build`.
+- Every published file has the license header, and the generated ones also carry the version.
+
+### Added
+
+- A warning in the console when the `foods` of a skin is not a list.
+- README notes: `food` and `food-halo` do not apply to emoji food, and browsers with anti-fingerprinting protection can affect the emoji check.
+- Tests of the leaderboard screen, on a fake page without dependencies, and a test of the license header.
+
 ## [0.3.0] - 2026-11-24
 
 ### Added

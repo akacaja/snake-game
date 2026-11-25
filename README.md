@@ -17,7 +17,7 @@ By default the game starts closed. The `open` attribute makes it open by itself,
 
 There are two ways. Pick one.
 
-**A. One file (works by double click, no server).** Copy `dist/snake-game.js` to your site and load it with a normal script tag. It registers `<snake-game>` and exposes a global `SnakeGame`. Size: **15.3 KB** gzipped (`dist/snake-game.js`, measured with Node's zlib, default level).
+**A. One file (works by double click, no server).** Copy `dist/snake-game.js` to your site and load it with a normal script tag. It registers `<snake-game>` and exposes a global `SnakeGame`. Size: **15.4 KB** gzipped (`dist/snake-game.js`, measured with Node's zlib, default level).
 
 ```html
 <script src="snake-game.js"></script>
@@ -29,9 +29,9 @@ There are two ways. Pick one.
 <script type="module" src="src/snake-game.js"></script>
 ```
 
-The file `dist/snake-game.js` is generated. Do not edit it. It has no comments (the code in `src/` has them). After changing anything in `src/`, run `npm run build`.
+The file `dist/snake-game.js` is generated. Do not edit it. It has no comments (the code in `src/` has them). `addons/` and `skins/` are generated too, from `src/addons/` and `src/skins/`. After changing anything in `src/`, run `npm run build`.
 
-Extras like skins and the leaderboard are always optional files: the main file never includes them. The leaderboard is `addons/leaderboard.js`, **6.5 KB** gzipped (see [Leaderboard](#leaderboard)).
+Extras like skins and the leaderboard are always optional files: the main file never includes them. The leaderboard is `addons/leaderboard.js`, **6.4 KB** gzipped (see [Leaderboard](#leaderboard)).
 
 Browser support: the modal uses the native `<dialog>` element, so you need a browser from 2022 or newer (Safari 15.4+, Firefox 98+, Chrome 99+). When the page is opened through `file://`, some browsers (Safari in particular) may not save the best score.
 
@@ -72,8 +72,8 @@ Values that are not valid go back to the default, with one warning in the consol
 | `mode` | `modal` / `inline` | `modal` | On top of the page, or in place of the tag. Changing it while open closes and reopens the game (emits `snake-close` and `snake-open`). |
 | `grid` | `dots` / `squares` / `lines` / `none` | `dots` | Dots, small filled squares, graph paper, or nothing. |
 | `snake` | `taper` / `uniform` | `taper` | The body gets thinner toward the tail, or stays the same size. |
-| `food` | `circle` / `square` | `circle` | Shape of the food. |
-| `food-halo` | `soft` / `none` | `soft` | Glow around the food. |
+| `food` | `circle` / `square` | `circle` | Shape of the food (not for emoji food). |
+| `food-halo` | `soft` / `none` | `soft` | Glow around the food (not for emoji food). |
 | `intro` | `wave` / `cascade` / `none` | `wave` | How the grid appears when the game opens. |
 | `transitions` | `on` / `off` | `on` | Smooth shrinking of the tail tip. |
 | `skin` | name of a skin | none | Theme of the food (emoji) and of the colors. See [Skins](#skins). |
@@ -87,7 +87,7 @@ Values that are not valid go back to the default, with one warning in the consol
 | `best-key` | text | `snake-game-best` | `localStorage` key of the best score. Empty turns it off. |
 | `leaderboard` | `on` / `off` | `on` | `off` ends a game as in version 0.2.0. Only does something when the leaderboard file is loaded. Read at the end of each game. |
 | `leaderboard-url` | address | none | Sends the scores to a service and shows its Top 10. Without it, nothing leaves the browser. See [Leaderboard](#leaderboard). |
-| `leaderboard-key` | text | `snake-game-leaderboard` | Start of the `localStorage` keys of the leaderboard. Empty stores nothing. Must start with a letter or a number: a value that starts with `-` works as empty and stores nothing. Do not use the same value as `best-key`. |
+| `leaderboard-key` | text | `snake-game-leaderboard` | Start of the `localStorage` keys of the leaderboard. Empty stores nothing. Must start with a letter or a number: a value that starts with `-` works as empty (nothing is stored, the list lasts until the page closes) and gives one warning in the console. Do not use the same value as `best-key`. |
 
 ### Texts
 
@@ -160,7 +160,7 @@ snake-game { --snake-color: rebeccapurple; --snake-spacing: 40px; }
 | `--snake-field-font-size` | Text size of the name field (default `16px`; keep it at 16px or more, so iPhones do not zoom in) |
 | `--snake-duration`, `--snake-intro-duration` | Transitions and grid entrance |
 
-By default the head is the spacing minus `--snake-gap` (30px) and the tip of the tail is 80% of the head (24px, and it follows a head you set by hand), so the space on screen between the head and the next dot is 2px, even when the grid shrinks to fit a small board. With `snake="taper"` the tail gets thinner and the space grows to about 8px at the tip; with `snake="uniform"` it is 2px along the whole body. `--snake-gap: 0` makes the dots touch and a negative value makes them overlap. You can still set `--snake-head-size` and `--snake-tail-size` to fixed values, like `16px` and `8px`.
+By default the head is the spacing minus `--snake-gap` (30px) and the tip of the tail is 80% of the head (24px, and it follows a head you set by hand), so the space on screen between the head and the next dot is 2px, even when the grid shrinks to fit a small board. The automatic head never gets smaller than 20% of a cell; a head you set by hand stays as it is. With `snake="taper"` the tail gets thinner and the space grows to about 8px at the tip; with `snake="uniform"` it is 2px along the whole body. `--snake-gap: 0` makes the dots touch and a negative value makes them overlap. You can still set `--snake-head-size` and `--snake-tail-size` to fixed values, like `16px` and `8px`.
 
 On phones (touch screen, short side up to 540px), in modal mode, the board takes `--snake-board-share` of the screen: 75% of the width when the phone is lying down (score and buttons on the right) and 75% of the height when it is standing (score on top). Turning the phone keeps the game going. Computers, tablets and `inline` mode keep the normal layout.
 
@@ -178,7 +178,9 @@ A skin is an optional theme: the food becomes an emoji (a different one each tim
 
 - Colors: your `--snake-*` variables win, then the colors of the skin, then the defaults. `skin-palette="off"` keeps your colors and uses only the emoji.
 - An emoji that the device cannot show is left out of the draw. If none can be shown, the normal circle or square appears (with the food color of the palette). A name that is not registered, for example because the file did not load, gives one warning in the console and the normal game.
-- Your own skin: add `[name, skin]` to `globalThis.snakeGameSkins` (works in any order, also with ES modules) or call `SnakeGame.registerSkin(name, skin)`, which returns `true` or `false`. The palette takes only color tokens, without the `--snake-` prefix. A food needs an emoji and a name (`en` and `pt`, for example). What is not valid is skipped, with a warning.
+- `food` and `food-halo` only change the circle or square: an emoji food keeps its own shape and has no glow.
+- Browsers with anti-fingerprinting protection (for example Firefox with `privacy.resistFingerprinting`, Brave or Tor Browser) can change the canvas check that sees which emojis the device shows. An emoji may then be left out (the normal circle or square appears) or show as an empty box.
+- Your own skin: add `[name, skin]` to `globalThis.snakeGameSkins` (works in any order, also with ES modules) or call `SnakeGame.registerSkin(name, skin)`, which returns `true` or `false`. The palette takes only color tokens, without the `--snake-` prefix. A food needs an emoji and a name (`en` and `pt`, for example). What is not valid is skipped, with a warning. `foods` that is not a list is skipped, with a warning.
 
 ```js
 (globalThis.snakeGameSkins = globalThis.snakeGameSkins || []).push(['pizza', {
@@ -194,6 +196,8 @@ A skin is an optional theme: the food becomes an emoji (a different one each tim
 
 After a game with points, the game asks for a username and then shows the Top 10, with your name highlighted. It is an optional file, like the skins, so it is not in `dist/snake-game.js`. Without the file, or with `leaderboard="off"`, the game ends exactly as in version 0.2.0.
 
+On a phone lying down (modal only), when the keyboard leaves little room, only the row with the username, Save and Skip is shown above the keyboard, and the board and the score come back when the keyboard closes. After saving, the keyboard closes and your name is in view. Upright, on a computer and in inline mode, nothing changes.
+
 ### How to load
 
 ```html
@@ -202,9 +206,9 @@ After a game with points, the game asks for a username and then shows the Top 10
 <snake-game open></snake-game>
 ```
 
-The file can come before or after the game. With ES modules, add `import './addons/leaderboard.js';` (it is a side-effect import). In both cases `addons/leaderboard.js` must be published together with the rest of your site. It is **6.5 KB** gzipped.
+The file can come before or after the game. With ES modules, add `import './addons/leaderboard.js';` (it is a side-effect import). In both cases `addons/leaderboard.js` must be published together with the rest of your site. It is **6.4 KB** gzipped.
 
-- **Local (default).** The Top 10 lives in this browser (`localStorage`). Each username keeps only its best score. Three keys are used, all starting with `leaderboard-key` (default `snake-game-leaderboard`): the list (up to 10 entries), `-name` (the last username, to fill the field next time) and `-keys` (see the next point). With `leaderboard-key=""` nothing is stored (not even the last username) and the list lasts until the page closes. With an empty key and a service, each save counts as a new browser, so the service answers "name already taken" for a name saved before. There is no filter for offensive names, because only the people who play on this browser see the list.
+- **Local (default).** The Top 10 lives in this browser (`localStorage`). Each username keeps only its best score. Three keys are used, all starting with `leaderboard-key` (default `snake-game-leaderboard`): the list (up to 10 entries), `-name` (the last username, to fill the field next time) and `-keys` (see the next point). With `leaderboard-key=""` nothing is stored (not even the last username) and the list lasts until the page closes. With an empty key and a service, each save counts as a new browser, so the service answers "name already taken" for a name saved before (the same for a value that starts with `-`). There is no filter for offensive names, because only the people who play on this browser see the list.
 - **A service.** With `leaderboard-url="https://scores.example.org/api"` the game sends the score to that service and shows its Top 10. The first time a name is saved, the service returns a random key. The game keeps it in the browser (separately for each address) and sends it on the next saves, so only that browser can update that name. Another browser gets "This name is already taken". The requests, answers and error codes are in [docs/leaderboard-api.md](docs/leaderboard-api.md). If the service is down, the game says so and does not freeze.
 - **Your own JavaScript.** If you do not want the standard format, set `game.leaderboard` (it wins over the address).
 
@@ -297,10 +301,12 @@ From the single file it is `SnakeGame.createEngine(...)`. The global `SnakeGame`
 
 ```sh
 npm test                 # automatic tests (Node, no dependencies)
-npm run build            # regenerates dist/snake-game.js
+npm run build            # regenerates dist/snake-game.js, addons/ and skins/
 node scripts/serve.js    # http://localhost:8000/demo/ and /examples/module.html
 npm run serve:pages      # same, under /snake-game/ like GitHub Pages
 ```
+
+To change a skin or an addon, edit it in `src/skins/` or `src/addons/`, then run `npm run build`.
 
 When the server starts, it also prints your network address (for example `http://192.168.0.12:8000/demo/`). Open it on a phone on the same Wi-Fi to try the game with your finger.
 

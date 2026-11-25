@@ -4,7 +4,7 @@
 //   const service = installFakeService(FAKE_URL, { rules, state });
 //   <snake-game leaderboard-url="https://fake-leaderboard.invalid/api">
 //
-// `rules` is { checkName, nameKey } (the username rules of addons/leaderboard.js: the real service must use the same).
+// `rules` is { checkName, nameKey } (the username rules of src/addons/leaderboard.js: the real service must use the same).
 // `state.mode` picks how the service behaves (see MODES). It can change at any time.
 
 export const FAKE_URL = 'https://fake-leaderboard.invalid/api';
