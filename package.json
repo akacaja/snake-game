@@ -1,6 +1,6 @@
 {
   "name": "snake-game",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "description": "A snake game web component with no dependencies. Add the script, add the tag, play.",
   "type": "module",
   "license": "MIT",

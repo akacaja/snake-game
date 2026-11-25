@@ -1,3 +1,4 @@
+/* snake-game | MIT (c) 2026 Carolina Cajazeira (@akacaja) */
 // Default drawing functions. They only use values from `scene` (see README): no literal colors or sizes.
 // A custom renderer has the same shape: (ctx, scene) => void.
 import { EMOJI_FONT } from './theme.js';

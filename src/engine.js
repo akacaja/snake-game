@@ -1,3 +1,4 @@
+/* snake-game | MIT (c) 2026 Carolina Cajazeira (@akacaja) */
 // Snake engine: pure game rules. No timers, no DOM. The UI calls step() on a clock.
 
 const VECTORS = {

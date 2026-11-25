@@ -1,15 +1,20 @@
+/* snake-game | MIT (c) 2026 Carolina Cajazeira (@akacaja) */
 // THEME: the single source of truth for every visual value (colors, sizes, fonts, spacing).
-// Nothing else in src/ may contain a literal color or a size in pixels (the only other place for colors is skins/*.js).
+// Nothing else in src/ may contain a literal color or a size in pixels (the only other place for colors is src/skins/*.js).
 // Each token below is public: set `--snake-<name>` on the element, on a parent or on :root
 // and it overrides the default. When the Figma file arrives, only this file changes.
 
 // Phones: a touch screen (pointer: coarse) that is small. 540px is the largest side that still counts as a phone
 // (the short side, so the same value works lying down and standing). Tablets and desktops keep the normal layout.
-const PHONE_LANDSCAPE = '(pointer: coarse) and (orientation: landscape) and (max-height: 540px)';
+export const PHONE_LANDSCAPE = '(pointer: coarse) and (orientation: landscape) and (max-height: 540px)';
 const PHONE_PORTRAIT = '(pointer: coarse) and (orientation: portrait) and (max-width: 540px)';
 
 // Default of the tail tip: this share of the head diameter (used when --snake-tail-size is not set).
 export const TAIL_RATIO = 0.8;
+// Smallest snake head, as a share of a cell on screen: a --snake-gap as big as a cell (or bigger) never makes the snake disappear.
+// A head set smaller by hand stays as it is.
+export const SNAKE_MIN_SHARE = 0.2;
+
 // Floor of the board on phones, in case --snake-board-share holds something invalid.
 const BOARD_MIN_SHARE = '50%';
 
@@ -26,8 +31,8 @@ export const TOKEN_DEFS = [
   { name: 'spacing', kind: 'length', value: '32px', doc: 'Distance between the centers of two neighbor cells.' },
   // Snake
   { name: 'color', kind: 'color', value: '#111111', doc: 'Color of the snake.' },
-  { name: 'gap', kind: 'signed-length', value: '2px', doc: 'Space on screen between the head and the next dot (2px by default). Dots shrink to keep it when the grid shrinks. With snake="taper" the tail gets thinner and the space grows to about 8px at the tip; with snake="uniform" it is 2px along the whole body. 0 lets the dots touch; a negative value makes them overlap.' },
-  { name: 'head-size', kind: 'auto-length', value: 'auto', doc: 'Diameter of the head (and of every dot when snake="uniform"). Default: auto, the spacing minus the gap (30px). A fixed value (like 16px) also works.' },
+  { name: 'gap', kind: 'signed-length', value: '2px', doc: 'Space on screen between the head and the next dot (2px by default). Dots shrink to keep it when the grid shrinks. With snake="taper" the tail gets thinner and the space grows to about 8px at the tip; with snake="uniform" it is 2px along the whole body. 0 lets the dots touch; a negative value makes them overlap. The automatic head never gets smaller than 20% of a cell; a head set by hand stays as it is.' },
+  { name: 'head-size', kind: 'auto-length', value: 'auto', doc: 'Diameter of the head (and of every dot when snake="uniform"). Default: auto, the spacing minus the gap (30px). A fixed value (like 16px) also works. With auto, the head never gets smaller than 20% of a cell.' },
   { name: 'tail-size', kind: 'auto-length', value: 'auto', doc: 'Diameter of the tip of the tail. Default: auto, 80% of the head (24px), following a head set by hand. A fixed value (like 8px) also works.' },
   // Food
   { name: 'food-color', kind: 'color', value: '#2563eb', doc: 'Color of the food.' },

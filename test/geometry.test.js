@@ -42,9 +42,25 @@ test('a negative gap makes the dots overlap and gap 0 makes them touch', () => {
   near(32 - dotDiameter({ ...base, headSize: 34, index: 0, count: 3, uniform: true, k }), -2);
 });
 
-test('snakeFit never goes below 0 or above 1', () => {
-  assert.equal(snakeFit({ fitted: 1, scale: 1, headSize: 30, gap: 2 }), 0);
+test('snakeFit never goes above 1, and its floor is 20% of a cell (0 only with minShare 0)', () => {
+  near(snakeFit({ fitted: 1, scale: 1, headSize: 30, gap: 2 }) * 30, 0.2);
+  assert.equal(snakeFit({ fitted: 1, scale: 1, headSize: 30, gap: 2, minShare: 0 }), 0);
   assert.equal(snakeFit({ fitted: 100, scale: 1, headSize: 30, gap: 2 }), 1);
+});
+
+test('a gap as big as the cell or bigger does not make the snake vanish: the head keeps 20% of a cell', () => {
+  const auto = (gap) => resolveSnakeSizes({ spacing: 32, gap, head: null, tail: null, ratio: 0.8 });
+  near(auto(40).headSize, 6.4);
+  near(auto(40).tailSize, 5.12);
+  near(auto(32).headSize, 6.4);
+  near(auto(-2).headSize, 34); // a negative gap is not changed
+  // squeezed grid: cell 22 on screen, gap 25, head 30 (scale 22/32)
+  const scale = 22 / 32;
+  const k = snakeFit({ fitted: 22, scale, headSize: 30, gap: 25 });
+  near(dotDiameter({ ...base, index: 0, count: 3, uniform: false, scale, k }), 4.4);
+  // a fixed head of 16 with gap 40 shrinks to the floor; a fixed head of 4 with gap 2 stays 4
+  near(dotDiameter({ headSize: 16, tailSize: 8, scale: 1, index: 0, count: 3, uniform: false, k: snakeFit({ fitted: 32, scale: 1, headSize: 16, gap: 40 }) }), 6.4);
+  near(dotDiameter({ headSize: 4, tailSize: 2, scale: 1, index: 0, count: 3, uniform: false, k: snakeFit({ fitted: 32, scale: 1, headSize: 4, gap: 2 }) }), 4);
 });
 
 test('gridSize counts whole cells and respects the minimum', () => {

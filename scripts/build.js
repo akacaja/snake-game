@@ -6,7 +6,7 @@
 //   - exports only as:   export function|class|const|let ...   or   export { a } from './x.js'
 //   - forbidden: export default, import * as, import(), import.meta, circular imports,
 //     and the same top-level name declared in two files.
-import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
+import { readFileSync, writeFileSync, mkdirSync, readdirSync } from 'node:fs';
 import { dirname, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -177,6 +177,27 @@ export function stripComments(src) {
   return out;
 }
 
+function readVersion() {
+  return JSON.parse(readFileSync(resolve(rootDir, 'package.json'), 'utf8')).version;
+}
+
+// The published addons and skins: src/addons/*.js and src/skins/*.js, without comments, with the generated header.
+// They are classic scripts (not modules), so they only lose their comments. Returns [{ from, to, text }].
+export function buildExtras() {
+  const version = readVersion();
+  const list = [];
+  for (const dir of ['addons', 'skins']) {
+    const names = readdirSync(resolve(rootDir, 'src', dir)).filter((f) => f.endsWith('.js')).sort();
+    for (const name of names) {
+      const from = `src/${dir}/${name}`;
+      const src = readFileSync(resolve(rootDir, from), 'utf8').replace(/\r\n/g, '\n');
+      const header = `/* snake-game v${version} | MIT (c) 2026 Carolina Cajazeira (@akacaja) | Generated from ${from}. Do not edit. */`;
+      list.push({ from, to: `${dir}/${name}`, text: `${header}\n${stripComments(src).trim()}\n` });
+    }
+  }
+  return list;
+}
+
 export function bundle(entry = defaultEntry) {
   const entryPath = resolve(entry);
   const ordered = [];
@@ -203,7 +224,7 @@ export function bundle(entry = defaultEntry) {
   visit(entryPath);
 
   const entryMod = ordered[ordered.length - 1];
-  const version = JSON.parse(readFileSync(resolve(rootDir, 'package.json'), 'utf8')).version;
+  const version = readVersion();
   const exportsList = [...new Set(entryMod.exported)];
   const parts = ordered.map((m) => `// ---- ${relative(rootDir, m.file).split('\\').join('/')} ----\n${stripComments(m.code).trim()}`);
 
@@ -229,7 +250,13 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
     const text = bundle();
     mkdirSync(dirname(outFile), { recursive: true });
     writeFileSync(outFile, text);
-    console.log(`Wrote ${relative(rootDir, outFile)} (${text.length} bytes)`);
+    console.log(`Wrote ${relative(rootDir, outFile)} (${Buffer.byteLength(text)} bytes)`);
+    for (const { from, to, text: extra } of buildExtras()) {
+      const target = resolve(rootDir, to);
+      mkdirSync(dirname(target), { recursive: true });
+      writeFileSync(target, extra);
+      console.log(`Wrote ${to} (${Buffer.byteLength(extra)} bytes, from ${from})`);
+    }
   } catch (error) {
     if (error instanceof BuildError) {
       console.error(`Build failed: ${error.message}`);

@@ -1,16 +1,15 @@
-/* snake-game | MIT (c) 2026 Carolina Cajazeira (@akacaja) */
-// Leaderboard for <snake-game>: the Top 10 after a game. Optional file (see the README).
-// Load it with <script src="addons/leaderboard.js"></script>, before or after the game.
-// Colors and sizes come only from the game tokens (var(--_*)): no literal color, no px.
+/* snake-game v0.3.1 | MIT (c) 2026 Carolina Cajazeira (@akacaja) | Generated from src/addons/leaderboard.js. Do not edit. */
 (function () {
   'use strict';
 
   const TOP = 10;
-  const TIMEOUT = 5000; // ms
+  const TIMEOUT = 5000;
+  const TYPING_QUERY = '(pointer: coarse) and (orientation: landscape) and (max-height: 33.75em)';
+  const TYPING_ROOM = 1.5;
+  const TYPING_HYSTERESIS = 1.2;
   const DEFAULT_KEY = 'snake-game-leaderboard';
-  const KEY_FORMAT = /^[A-Za-z0-9_-]{16,128}$/; // the shape of a key in the contract
+  const KEY_FORMAT = /^[A-Za-z0-9_-]{16,128}$/;
 
-  // Texts: text-leaderboard-<name> attributes change them.
   const TEXTS = {
     label: 'Username',
     save: 'Save',
@@ -26,7 +25,6 @@
     'error-rate-limited': 'Too many tries. Wait a moment and try again.',
     'error-offline': 'Service unavailable. Try again later.',
   };
-  // Error code -> name of its text.
   const ERROR_TEXT = {
     format: 'chars',
     personal_data: 'personal-data',
@@ -41,19 +39,15 @@
     return own === null ? TEXTS[name] : own;
   };
 
-  // ---- username rules ----
 
   const CHARS = /^[\p{L}\p{M}\p{N}_.\-]+$/u;
-  // Invisible characters and marks that would pass as letters.
   const INVISIBLE = /[\p{Me}͏ᅟᅠ឴឵᠋-᠏ㅤ︀-️ﾠ\u{e0100}-\u{e01ef}]/u;
   const LINK = /https?:|:\/\/|www\.|\.(com|net|org|io|br|co|me|app|dev|gg|tv|ly|xyz|info)(\.|$)/;
 
-  // { name, error }: the trimmed name and the first rule it breaks (personal-data, chars, length, start; null: fine).
   function checkName(raw) {
     const name = String(raw).trim().normalize('NFC');
     const plain = name.normalize('NFKC').toLowerCase();
     const error = (() => {
-      // Personal data first, so "ana@x.com" says so.
       if (plain.includes('@') || LINK.test(plain) || /\p{N}{6}/u.test(plain.replace(/[^\p{L}\p{N}]/gu, ''))) return 'personal-data';
       if (name && (!CHARS.test(name) || INVISIBLE.test(name))) return 'chars';
       const size = [...name].length;
@@ -64,19 +58,15 @@
     return { name, error };
   }
 
-  // Same key = same name ("Carol", "cárol", "ca_rol").
   const nameKey = (name) => name.toLowerCase().normalize('NFKD').replace(/\p{M}/gu, '').replace(/[_.\-]/g, '');
 
-  // ---- local ranking ----
 
-  // Adds a score to a sorted list: a lower score never replaces a higher one, a tie keeps who came first.
-  // Returns the list (10 at most) and `me`, the position of the name (-1: did not fit).
   function addScore(list, name, score) {
     const key = nameKey(name);
     const next = list.slice();
     const old = next.findIndex((e) => nameKey(e.name) === key);
     if (old >= 0 && score <= next[old].score) {
-      next[old] = { name, score: next[old].score }; // newest spelling
+      next[old] = { name, score: next[old].score };
       return { list: next, me: old };
     }
     if (old >= 0) next.splice(old, 1);
@@ -86,7 +76,6 @@
     return { list: next.slice(0, TOP), me: at < TOP ? at : -1 };
   }
 
-  // The stored text made safe: bad entries go, repeated names keep the best score.
   function readList(raw) {
     let data;
     try { data = JSON.parse(raw); } catch { data = null; }
@@ -99,33 +88,35 @@
     return [...best.values()].sort((a, b) => b.score - a.score).slice(0, TOP);
   }
 
-  // Keys starting with '-' (empty leaderboard-key) are never stored.
   const store = {
     get(key) { try { return key[0] === '-' ? null : localStorage.getItem(key); } catch { return null; } },
-    set(key, value) { try { if (key[0] !== '-') localStorage.setItem(key, value); } catch { /* storage blocked */ } },
+    set(key, value) { try { if (key[0] !== '-') localStorage.setItem(key, value); } catch { } },
   };
   const validKey = (key) => typeof key === 'string' && KEY_FORMAT.test(key);
+  let warnedKey = false;
   const prefix = (game) => {
     const own = game.getAttribute('leaderboard-key');
-    return own === null ? DEFAULT_KEY : own;
+    if (own === null) return DEFAULT_KEY;
+    if (own[0] !== '-') return own;
+    if (!warnedKey) {
+      warnedKey = true;
+      console.warn(`snake-game leaderboard: leaderboard-key "${own}" starts with "-": nothing is stored, as with an empty key.`);
+    }
+    return '';
   };
-  let memory = []; // used when the storage key is empty
+  let memory = [];
 
-  // ---- backends: submit({ name, score }, signal) -> Promise<{ top, me }>; they fail with an error that has a `code` ----
 
-  // `detail` goes to the console.
   function fail(code, detail) {
     if (detail) console.warn(`snake-game leaderboard: ${detail}`);
     return Object.assign(new Error(code), { code });
   }
 
-  // { name, score } list, or null.
   function parseTop(top) {
     if (!Array.isArray(top) || top.some((e) => !e || typeof e.name !== 'string' || !Number.isFinite(e.score))) return null;
     return top.slice(0, TOP).map((e) => ({ name: e.name, score: e.score }));
   }
 
-  // How an answer is read (docs/leaderboard-api.md): 'ok', 'top' (fetch the list) or an error code.
   function codeFromResponse(status, body) {
     const error = body && body.error;
     if (status === 409) return 'taken';
@@ -154,13 +145,12 @@
 
   function urlBackend(game, address) {
     let base = '';
-    try { base = new URL(address, globalThis.document && document.baseURI).href.replace(/\/$/, ''); } catch { /* handled below */ }
+    try { base = new URL(address, globalThis.document && document.baseURI).href.replace(/\/$/, ''); } catch { }
     const keysName = `${prefix(game)}-keys`;
     const readKeys = () => {
       try { const keys = JSON.parse(store.get(keysName)); return keys && typeof keys === 'object' ? keys : {}; } catch { return {}; }
     };
 
-    // One request: { status, body } (body null if not JSON). Network, timeout or `outer` aborted: offline.
     async function send(path, init, outer) {
       const control = new AbortController();
       const stop = () => control.abort();
@@ -188,8 +178,8 @@
         const saved = keys[base] && keys[base][who];
         let { status, body } = await send('/scores', { method: 'POST', body: JSON.stringify(validKey(saved) ? { name, score, key: saved } : { name, score }) }, outer);
         let code = codeFromResponse(status, body);
-        const key = body && body.key; // read now: the fallback GET replaces `body`
-        if (code === 'top') { // no list in the answer
+        const key = body && body.key;
+        if (code === 'top') {
           ({ status, body } = await send('/scores?limit=10', {}, outer));
           code = status === 200 && body && Array.isArray(body.top) ? 'ok' : 'offline';
         }
@@ -232,9 +222,7 @@
     return address ? urlBackend(game, address) : localBackend(game);
   };
 
-  // ---- screen ----
 
-  // Tokens only. No @media, no animation.
   const STYLE = `
 .overlay { overflow: auto; justify-content: flex-start; }
 .overlay::before, .overlay::after { content: ''; flex: 1 0 0; }
@@ -251,6 +239,12 @@
 .lb-list li { display: flex; gap: 0.5rem; padding: 0.125rem 0.5rem; }
 .lb-name { flex: 1; overflow: hidden; text-overflow: ellipsis; text-align: start; }
 .lb-list li[aria-current] { color: var(--_highlight-color); font-weight: 700; }
+.addon[data-typing] { position: fixed; z-index: 1; top: var(--lb-top); left: var(--lb-left); width: var(--lb-width); height: var(--lb-height); max-width: none; padding: 0.5rem max(0.75rem, env(safe-area-inset-right, 0rem)) 0.5rem max(0.75rem, env(safe-area-inset-left, 0rem)); overflow: auto; background: var(--_backdrop); visibility: visible; }
+.panel:has(.addon[data-typing]) { visibility: hidden; }
+.addon[data-typing] .lb-form { flex-flow: row wrap; justify-content: center; max-width: 40rem; margin-block: auto; }
+.addon[data-typing] label { flex: none; }
+.addon[data-typing] .lb-field { flex: 1 1 8rem; width: auto; min-width: 0; }
+.addon[data-typing] .lb-error { order: 1; flex-basis: 100%; }
 `;
   const TEMPLATE = `<style>${STYLE}</style>
 <form class="lb-form" novalidate>
@@ -261,18 +255,22 @@
 </form>
 <section class="lb-done" hidden><h3 class="lb-title" tabindex="-1"></h3><ol class="lb-list"></ol></section>`;
 
-  // Called by the game after a game with points. Fills `box`, returns the cleanup.
   function leaderboard(game, { box, action, score, skip }) {
     const backend = pickBackend(game);
     box.innerHTML = TEMPLATE;
     const $ = (selector) => box.querySelector(selector);
     const [form, input, label, message, save, skipButton, done, title, list] = ['form', 'input', 'label', '.lb-error', '.lb-save', '.lb-skip', '.lb-done', '.lb-title', '.lb-list'].map($);
-    let errorName = ''; // text under the field
-    let retry = false; // service problem: Save becomes "Try again"
-    let checked = false; // after an error, check at every key
+    let errorName = '';
+    let retry = false;
+    let checked = false;
     let busy = false;
     let dead = false;
     let control = null;
+    let typing = false;
+    let formHeight = 0;
+    let rescroll = null;
+    const viewport = globalThis.visualViewport;
+    const phone = typeof matchMedia === 'function' ? matchMedia(TYPING_QUERY) : null;
 
     const say = (type, detail) => game.dispatchEvent(new CustomEvent(type, { bubbles: true, composed: true, detail }));
     const paint = () => {
@@ -284,7 +282,6 @@
       if (message.textContent !== shown) message.textContent = shown;
       input.setAttribute('aria-invalid', String(Boolean(errorName) && !retry));
     };
-    // Shows a problem, tells the page, focuses where the person can act.
     const problem = (code, name) => {
       errorName = name;
       retry = code === 'offline' || code === 'rate_limited';
@@ -292,7 +289,32 @@
       say('snake-leaderboard-error', { code });
       (retry ? save : input).focus();
     };
+    const setTyping = (on) => {
+      if (on) {
+        for (const [name, value] of [['top', viewport.offsetTop], ['left', viewport.offsetLeft], ['width', viewport.width], ['height', viewport.height]]) box.style.setProperty(`--lb-${name}`, `${value}px`);
+        box.setAttribute('data-typing', '');
+      } else if (typing) {
+        box.removeAttribute('data-typing');
+      }
+      typing = on;
+    };
+    const update = (fromResize) => {
+      if (dead || !viewport || !phone) return;
+      let on = false;
+      if (!form.hidden && box.closest('dialog') && phone.matches) {
+        if (!typing) formHeight = form.getBoundingClientRect().height;
+        const room = formHeight * TYPING_ROOM * (typing ? TYPING_HYSTERESIS : 1);
+        const focused = box.contains(box.getRootNode().activeElement);
+        on = formHeight > 0 && viewport.height < room && (focused || (typing && !fromResize));
+      }
+      setTyping(on);
+    };
     const show = ({ top, me }) => {
+      const wasTyping = typing;
+      if (wasTyping) {
+        input.blur();
+        setTyping(false);
+      }
       form.hidden = true;
       done.hidden = false;
       action.hidden = false;
@@ -312,7 +334,10 @@
       });
       title.focus();
       const mine = list.children[me];
-      if (mine) mine.scrollIntoView({ block: 'nearest' });
+      if (mine) {
+        mine.scrollIntoView({ block: 'nearest' });
+        if (wasTyping) rescroll = mine;
+      }
     };
 
     input.value = store.get(`${prefix(game)}-name`) || '';
@@ -326,14 +351,29 @@
     });
     input.addEventListener('keydown', (e) => {
       if (e.key !== 'Escape') return;
-      e.preventDefault(); // leaves the field only; the next Escape closes
+      e.preventDefault();
       save.focus();
     });
-    // Keep the field above the phone keyboard.
-    const reveal = () => requestAnimationFrame(() => { if (!dead) input.scrollIntoView({ block: 'nearest' }); });
+    const reveal = () => requestAnimationFrame(() => { if (!dead && !typing && !form.hidden) input.scrollIntoView({ block: 'nearest' }); });
     input.addEventListener('focus', reveal);
-    const viewport = globalThis.visualViewport;
-    if (viewport) viewport.addEventListener('resize', reveal);
+    const onResize = () => {
+      update(true);
+      reveal();
+      if (rescroll) {
+        const row = rescroll;
+        rescroll = null;
+        requestAnimationFrame(() => { if (!dead) row.scrollIntoView({ block: 'nearest' }); });
+      }
+    };
+    const refresh = () => update(false);
+    const onFocusOut = (e) => { if (e.relatedTarget && !box.contains(e.relatedTarget)) setTyping(false); };
+    if (viewport) {
+      viewport.addEventListener('resize', onResize);
+      viewport.addEventListener('scroll', refresh);
+    }
+    if (phone) phone.addEventListener('change', refresh);
+    box.addEventListener('focusin', refresh);
+    box.addEventListener('focusout', onFocusOut);
     skipButton.addEventListener('click', () => skip());
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
@@ -370,7 +410,6 @@
       }
     });
 
-    // Texts follow text-leaderboard-* and lang while the box is open.
     const watcher = typeof MutationObserver === 'function' ? new MutationObserver((changes) => {
       if (changes.some((c) => /^(text-leaderboard-|lang$)/.test(c.attributeName))) paint();
     }) : null;
@@ -382,12 +421,19 @@
       dead = true;
       if (control) control.abort();
       if (watcher) watcher.disconnect();
-      if (viewport) viewport.removeEventListener('resize', reveal);
+      if (viewport) {
+        viewport.removeEventListener('resize', onResize);
+        viewport.removeEventListener('scroll', refresh);
+      }
+      if (phone) phone.removeEventListener('change', refresh);
+      box.removeEventListener('focusin', refresh);
+      box.removeEventListener('focusout', onFocusOut);
+      setTyping(false);
+      rescroll = null;
     };
   }
 
-  // For the tests.
-  leaderboard.lib = { checkName, nameKey, addScore, readList, parseTop, codeFromResponse, localBackend, urlBackend, hookBackend, store, TEXTS };
+  leaderboard.lib = { checkName, nameKey, addScore, readList, parseTop, codeFromResponse, localBackend, urlBackend, hookBackend, store, TEXTS, TYPING_QUERY, TYPING_ROOM, TYPING_HYSTERESIS };
 
   (globalThis.snakeGameAddons = globalThis.snakeGameAddons || []).push(['leaderboard', leaderboard]);
 }());

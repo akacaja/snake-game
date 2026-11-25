@@ -146,8 +146,15 @@ test('normalizeSkin never throws: foods that is not a list, a palette that is no
   const warnings = [];
   const warn = (m) => warnings.push(m);
   for (const foods of [{}, 'ab', 5, null, true]) {
+    const before = warnings.length;
     assert.deepEqual(normalizeSkin({ foods }, ['color'], warn).foods, [], String(foods));
+    // null is the same as no foods at all: no warning. Anything else that is not a list warns once.
+    assert.equal(warnings.length, before + (foods === null ? 0 : 1), `${foods} warns`);
+    if (foods !== null) assert.equal(warnings.at(-1), 'foods must be a list. Skipped.');
   }
+  const none = warnings.length;
+  assert.deepEqual(normalizeSkin({ palette: {} }, ['color'], warn).foods, []);
+  assert.equal(warnings.length, none, 'a missing foods does not warn');
   for (const palette of ['text', 5, ['color'], true]) {
     const before = warnings.length;
     assert.deepEqual(normalizeSkin({ palette }, ['color'], warn).palette, {}, String(palette));

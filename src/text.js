@@ -1,3 +1,4 @@
+/* snake-game | MIT (c) 2026 Carolina Cajazeira (@akacaja) */
 // Pure text helpers: placeholder replacement and plural forms.
 
 export const DEFAULT_TEXTS = {

@@ -1,3 +1,4 @@
+/* snake-game | MIT (c) 2026 Carolina Cajazeira (@akacaja) */
 // Pure input helpers: key -> direction, swipe -> direction, and the text-field check.
 
 const KEY_DIRECTIONS = {

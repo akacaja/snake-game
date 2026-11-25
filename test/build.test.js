@@ -1,10 +1,10 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtempSync, readFileSync, writeFileSync, rmSync } from 'node:fs';
+import { mkdtempSync, readFileSync, writeFileSync, rmSync, readdirSync, existsSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import vm from 'node:vm';
-import { bundle, stripComments } from '../scripts/build.js';
+import { bundle, buildExtras, stripComments } from '../scripts/build.js';
 
 const distPath = new URL('../dist/snake-game.js', import.meta.url);
 const normalize = (text) => text.replace(/\r\n/g, '\n');
@@ -12,6 +12,25 @@ const normalize = (text) => text.replace(/\r\n/g, '\n');
 test('dist/snake-game.js is up to date', () => {
   const saved = normalize(readFileSync(distPath, 'utf8'));
   assert.equal(saved, normalize(bundle()), 'dist/snake-game.js is out of date. Run npm run build');
+});
+
+const rootUrl = new URL('..', import.meta.url);
+
+test('addons/ and skins/ are up to date with src/addons/ and src/skins/', () => {
+  const extras = buildExtras();
+  assert.ok(extras.length >= 4, 'the addon and the three skins');
+  for (const { to, text } of extras) {
+    assert.ok(existsSync(new URL(to, rootUrl)), `${to} does not exist. Run npm run build`);
+    assert.equal(normalize(readFileSync(new URL(to, rootUrl), 'utf8')), normalize(text), `${to} is out of date. Run npm run build`);
+  }
+});
+
+test('there is no generated file in addons/ or skins/ without a source in src/', () => {
+  for (const dir of ['addons', 'skins']) {
+    for (const file of readdirSync(new URL(`${dir}/`, rootUrl)).filter((f) => f.endsWith('.js'))) {
+      assert.ok(existsSync(new URL(`src/${dir}/${file}`, rootUrl)), `${dir}/${file} has no source in src/${dir}/`);
+    }
+  }
 });
 
 function runDist(sandbox) {
@@ -159,6 +178,21 @@ test('stripComments is safe on every source file: the result still parses and ke
   }
 });
 
+test('stripComments is safe on src/addons and src/skins: it still parses, templates and strings are kept, no comment line is left', () => {
+  for (const { from, to } of buildExtras()) {
+    const src = readFileSync(new URL(from, rootUrl), 'utf8');
+    const out = stripComments(src);
+    assert.ok(out.length < src.length, from);
+    assert.doesNotThrow(() => new vm.Script(out), from);
+    // The big templates (the CSS and the HTML of the addon, which hold their own /* */ and //) must come out identical.
+    const templates = (out.match(/`(?:[^`\\]|\\.)*`/g) || []).filter((t) => t.includes('\n'));
+    for (const template of templates) assert.ok(src.includes(template), `${from}: a template changed`);
+    const strings = (text) => (text.match(/'[^'\n]*'/g) || []).filter((x) => !x.includes('//'));
+    for (const str of strings(out)) assert.ok(src.includes(str), `${from}: ${str}`);
+    assert.ok(!out.split('\n').some((l) => /^\s*\/\//.test(l)), `${to} still has a comment line`);
+  }
+});
+
 test('the dist has no comment from src/ (only the header and the file markers)', () => {
   const text = readFileSync(distPath, 'utf8');
   assert.ok(!text.includes('Next food index'), 'comment of src/skins.js');
@@ -200,4 +234,14 @@ test('the skin queue still works the same way with the generic queue helper', ()
   sandbox.snakeGameSkins = [5];
   runDist(sandbox);
   assert.deepEqual(warnings, ['<snake-game> a skin in the queue must be [name, skin]. Skipped.']);
+});
+
+test('a skin whose foods is not a list warns with the full text of the game; no foods, or null, does not warn', () => {
+  const { sandbox, warnings } = makeSandbox();
+  runDist(sandbox);
+  sandbox.SnakeGame.registerSkin('x', { foods: {} });
+  assert.deepEqual(warnings, ['<snake-game> skin "x": foods must be a list. Skipped.']);
+  sandbox.SnakeGame.registerSkin('y', { palette: {} });
+  sandbox.SnakeGame.registerSkin('z', { foods: null });
+  assert.equal(warnings.length, 1);
 });

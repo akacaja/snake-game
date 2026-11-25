@@ -17,9 +17,11 @@ const LITERALS = [
 ];
 
 // Addons draw too (the leaderboard has a form and a list): they may only use the game tokens, as var(--_*).
-const ADDON_FILES = readdirSync(join(root, 'addons')).filter((f) => f.endsWith('.js')).map((f) => `addons/${f}`);
+// Both the source (src/addons) and the generated file (addons) are checked.
+const jsIn = (dir) => readdirSync(join(root, dir)).filter((f) => f.endsWith('.js')).map((f) => `${dir}/${f}`);
+const ADDON_FILES = [...jsIn('src/addons'), ...jsIn('addons')];
 
-test('no literal colors or sizes outside src/theme.js, skins/*.js and addons/*.js (the addons use only var(--_*))', () => {
+test('no literal colors or sizes outside src/theme.js, src/skins/*.js and src/addons/*.js (the addons use only var(--_*))', () => {
   assert.ok(ADDON_FILES.length > 0);
   for (const file of [...DRAWING_FILES, ...ADDON_FILES]) {
     const lines = read(file).split('\n');
@@ -32,9 +34,9 @@ test('no literal colors or sizes outside src/theme.js, skins/*.js and addons/*.j
 });
 
 test('skin files have no sizes in px (they only carry colors and emoji)', () => {
-  for (const file of readdirSync(join(root, 'skins')).filter((f) => f.endsWith('.js'))) {
-    read(`skins/${file}`).split('\n').forEach((line, i) => {
-      assert.ok(!/\b\d+(\.\d+)?\s*px\b/i.test(line), `skins/${file}:${i + 1} has a size in px`);
+  for (const file of [...jsIn('src/skins'), ...jsIn('skins')]) {
+    read(file).split('\n').forEach((line, i) => {
+      assert.ok(!/\b\d+(\.\d+)?\s*px\b/i.test(line), `${file}:${i + 1} has a size in px`);
     });
   }
 });

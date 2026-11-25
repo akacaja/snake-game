@@ -1,3 +1,4 @@
+/* snake-game | MIT (c) 2026 Carolina Cajazeira (@akacaja) */
 // <snake-game>: the web component. Shadow DOM + canvas, modal or inline, keyboard and touch.
 import { createEngine } from './engine.js';
 import { directionFromKey, directionFromSwipe, isTyping } from './input.js';

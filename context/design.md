@@ -18,15 +18,15 @@ Criado pelo /agent-crew:new-project. Este arquivo traz as REGRAS DE USO do visua
   - cor do texto em placar, mensagens e botões;
   - fundo do modal e das mensagens com o token de backdrop;
   - nunca escrever uma cor ou tamanho direto nos arquivos de desenho: criar ou usar um token;
-  - cores só em `src/theme.js` e em `skins/*.js` (as skins trazem só cores e emojis, nunca tamanhos).
+  - cores só em `src/theme.js` e em `src/skins/*.js` (as skins trazem só cores e emojis, nunca tamanhos).
 - Tipografia: fonte e tamanho vêm dos tokens `--snake-font` e `--snake-font-size`; o placar fica em negrito.
 - Formas: pontos redondos na grade e na cobra; botões em pílula; a comida é círculo ou quadrado, ou emoji, quando há skin.
 - Acessibilidade: contraste mínimo de 4.5:1 para texto; alvos de toque com pelo menos 44 px; todo elemento interativo acessível pelo teclado.
-- Cores e tamanhos: só em `src/theme.js`. As skins (`skins/*.js`) trazem só cores. Os addons (`addons/*.js`) usam só `var(--_*)` (os tokens do jogo), em medidas relativas (`rem`, `em`, `thin`, `medium`), sem cor nem `px` escritos.
+- Cores e tamanhos: só em `src/theme.js`. As skins (`src/skins/*.js`) trazem só cores. Os addons (`src/addons/*.js`) usam só `var(--_*)` (os tokens do jogo), em medidas relativas (`rem`, `em`, `thin`, `medium`), sem cor nem `px` escritos.
 
 ## Skins (temas opcionais)
 
-Cada skin troca a comida por emojis e traz uma paleta de 8 cores (cobra, grade, fundo, cobertura, texto, foco, comida e brilho da comida). Os valores ficam em `skins/*.js`. Contrastes verificados em `test/skin-files.test.js` (texto sobre o fundo ≥ 4,5:1; cobra, comida e foco sobre o fundo ≥ 3:1):
+Cada skin troca a comida por emojis e traz uma paleta de 8 cores (cobra, grade, fundo, cobertura, texto, foco, comida e brilho da comida). Os valores ficam em `src/skins/*.js` (o `npm run build` gera `skins/*.js`). Contrastes verificados em `test/skin-files.test.js` (texto sobre o fundo ≥ 4,5:1; cobra, comida e foco sobre o fundo ≥ 3:1):
 
 | Skin | Texto / fundo | Cobra / fundo | Comida / fundo | Foco / fundo |
 | --- | --- | --- | --- | --- |
@@ -46,6 +46,7 @@ O fim de jogo com ranking usa os botões em pílula de sempre (`.btn`, 44 px) e 
 - **Destaque do próprio nome:** `--snake-highlight-color` (padrão: a cor do foco) + negrito + `aria-current`, com contraste de pelo menos 4,5:1 com o fundo. A skin pode pintar esse token.
 - **Foco:** o campo recebe o foco ao abrir; depois de salvar, o foco vai para o título "Top 10".
 - **Celular:** o painel rola quando o teclado ou a tela baixa não deixam tudo à mostra; não há `@media` novo.
+- **Modo digitando (celular deitado, só no modal):** quando o espaço acima do teclado é menor que 1,5 vez a altura do formulário (e só sai a partir de 1,8 vez), aparece só a linha "Username [campo] Save Skip" sobre a tela, no espaço visível acima do teclado, com o fundo do token de backdrop. Em pé e no modo inline, nada muda. Depois de salvar, o teclado fecha e a linha do próprio nome volta à vista.
 
 ## Referências visuais
 
