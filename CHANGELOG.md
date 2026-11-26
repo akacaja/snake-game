@@ -6,9 +6,9 @@ All notable changes to this project are listed here. The format follows [Keep a 
 
 ### Added
 
-- A landing page at the site root (`index.html` + `site/`), in English: a playground with the real game (skin, grid, snake, gap, colors, walls, intro, speed and leaderboard), the code ready to paste (HTML, CSS tokens and a prompt for AI) with Copy and Copy link, six animated feature illustrations, a FAQ and a footer. It uses no dependencies, and the page itself has no build step (it loads the built `dist/`); the only external request is the page fonts.
+- A landing page at the site root (`index.html` + `site/`), in English: a playground with the real game (skin, grid, snake, gap, colors, walls, intro, speed and leaderboard), the code ready to paste (HTML, CSS tokens and a prompt for AI) in a "Get code" drawer, with Copy code and Copy link and a confirmation message (and a clear message when the browser blocks copying), six animated feature illustrations, a FAQ and a footer. It uses no dependencies, and the page itself has no build step (it loads the built `dist/`); the only external request is the page fonts. On a phone, the feature animation sits right below the open item.
 - `site/config.js` and `site/scenes.js`: pure modules (no DOM) with the code generator, the share link and the illustration frames, with tests.
-- `site/landing.js` (playground and code panel), `site/features.js` (feature list and illustrations) and `site/landing.css` (the landing page's only colors and sizes).
+- `site/landing.js` (playground, settings and copy), `site/drawer.js` (the code drawer), `site/features.js` (feature list and illustrations) and `site/landing.css` (the landing page's only colors and sizes).
 
 ### Changed
 

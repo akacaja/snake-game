@@ -33,6 +33,10 @@
   --shadow-modal: 0 12px 32px rgb(0 0 0 / 0.18);
   --veil: rgb(17 17 17 / 0.32);
   --field-glow: rgb(17 17 17 / 0.08);
+  --toast-ok: #16A34A; /* only the stroke of the check icon in the toast: 3.30:1 on white (a graphic, not text) */
+  --toast-error: #DC2626; /* only the stroke of the alert icon in the toast: 4.83:1 on white */
+  --shadow-toast: 0 8px 24px rgb(0 0 0 / 0.28);
+  --shadow-drawer: -16px 0 40px rgb(0 0 0 / 0.18); /* the code drawer on a computer */
 
   /* Scene colors (illustrations): snake inks and the palettes of the 3 skins (same values as src/skins/*.js) */
   --scene-ink-1: #111111;
@@ -70,12 +74,20 @@
   --radius-key: 6px;
   --radius-tag: 3px;
   --radius-bubble-tail: 4px;
+  --radius-cta: 12px; /* Get code and the toast */
+  --radius-color-pick: 8px;
 
   /* Layout */
   --max-width: 1200px;
   --gutter: 24px;
   --target: 44px; /* minimum height of every button */
+  --target-cta: 48px; /* the Get code button */
+  --drawer-width: 560px; /* the code drawer on a computer */
+  --color-pick-height: 32px; /* a color sample in the settings */
+  --select-chevron-size: 16px;
+  --select-chevron-gap: 14px; /* distance from the arrow of a menu to its right edge */
   --section-gap: 96px;
+  --features-stacked-max: 943.98px; /* the viewport width below which the features list and panel stack in one column (380 + 56 + 460 + 2 gutters of 24) */
   --scene-width: 400px; /* every scene is drawn on a frame this wide */
   --cell: 32px; /* one cell of a scene board */
   --seg-d: 24px; /* snake segment of a scene */
@@ -96,6 +108,10 @@
   --text-summary: 18px;
   --text-emoji: 22px;
   --text-emoji-small: 20px;
+  --text-drawer-title: 17px;
+  --text-select: 14px; /* menus and the link field; 16px on touch screens (see "Small screens"), or the iPhone zooms in */
+  --text-chip-small: 12px; /* the dark chips of the drawer */
+  --text-color-name: 11px; /* the name under a color sample */
 }
 
 *, *::before, *::after { box-sizing: border-box; }
@@ -202,6 +218,10 @@ a:hover { color: var(--link-hover); }
   border-radius: var(--radius-pill);
   padding: 3px 8px;
 }
+/* On narrow phones the version badge pushes "View on GitHub" to a second line; hide it there (card 9). */
+@media (max-width: 430px) {
+  .brand__version { display: none; }
+}
 .logo__dot { fill: var(--ink); }
 .logo__dot--accent { fill: var(--accent); }
 
@@ -246,6 +266,7 @@ a:hover { color: var(--link-hover); }
 .playground { padding-bottom: 24px; }
 
 .playground__card {
+  position: relative;
   display: grid;
   grid-template-columns: minmax(0, 1fr) 340px;
   border: 1px solid var(--line);
@@ -290,10 +311,10 @@ a:hover { color: var(--link-hover); }
 
 .settings {
   min-width: 0;
-  padding: 24px;
+  padding: 20px;
   display: flex;
   flex-direction: column;
-  gap: 22px;
+  gap: 18px;
   border-left: 1px solid var(--line);
 }
 
@@ -331,32 +352,6 @@ a:hover { color: var(--link-hover); }
 .choice[aria-pressed="true"] { background: var(--ink); color: var(--surface); border-color: var(--ink); }
 .choice__icon { font-size: var(--text-lead); line-height: 1; }
 
-.segmented {
-  display: flex;
-  gap: 4px;
-  padding: 4px;
-  background: var(--surface-2);
-  border-radius: var(--radius-segmented);
-}
-.segmented__item {
-  flex: 1 1 0;
-  min-width: 0;
-  padding: 0 4px;
-  font: inherit;
-  font-size: var(--text-ui);
-  min-height: var(--target);
-  border: 0;
-  border-radius: var(--radius-segmented-item);
-  background: transparent;
-  color: var(--ink-2);
-  cursor: pointer;
-}
-.segmented__item[aria-pressed="true"] {
-  background: var(--surface);
-  color: var(--ink);
-  box-shadow: var(--shadow-soft);
-}
-
 .range {
   width: 100%;
   min-height: var(--target);
@@ -364,90 +359,184 @@ a:hover { color: var(--link-hover); }
   accent-color: var(--ink);
 }
 
-.color-row {
+/* Colors: 4 samples in a row, the name under each one. The sample is the real color input. */
+.color-picks {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 6px;
+}
+.color-pick {
   display: flex;
-  align-items: center;
-  gap: 10px;
-  min-height: var(--target);
-  font-size: var(--text-ui);
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
   cursor: pointer;
 }
-.color-row__name { flex: 1 1 auto; }
-.color-row__value { font-family: var(--font-mono); font-size: var(--text-label); color: var(--ink-2); }
-.color-row__input {
-  flex: none;
-  width: 22px;
-  height: 22px;
+.color-pick__input {
+  width: 100%;
+  height: var(--color-pick-height);
   padding: 0;
   border: 1px solid var(--line);
-  border-radius: var(--radius-swatch);
+  border-radius: var(--radius-color-pick);
   background: none;
   cursor: pointer;
   -webkit-appearance: none;
   appearance: none;
   overflow: hidden;
 }
-.color-row__input::-webkit-color-swatch-wrapper { padding: 0; }
-.color-row__input::-webkit-color-swatch { border: 0; }
-.color-row__input::-moz-color-swatch { border: 0; }
+.color-pick__input::-webkit-color-swatch-wrapper { padding: 0; }
+.color-pick__input::-webkit-color-swatch { border: 0; }
+.color-pick__input::-moz-color-swatch { border: 0; }
 /* The board background is "transparent" by default: a checkerboard says "no color". */
-.color-row__input[data-transparent] {
+.color-pick__input[data-transparent] {
   background-image: conic-gradient(var(--line-strong) 25%, var(--surface) 0 50%, var(--line-strong) 0 75%, var(--surface) 0);
   background-size: 10px 10px;
 }
-.color-row__input[data-transparent]::-webkit-color-swatch { background: transparent; }
-.color-row__input[data-transparent]::-moz-color-swatch { background: transparent; }
+.color-pick__input[data-transparent]::-webkit-color-swatch { background: transparent; }
+.color-pick__input[data-transparent]::-moz-color-swatch { background: transparent; }
+.color-pick__name {
+  font-size: var(--text-color-name);
+  color: var(--ink-2);
+  text-align: center;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
 
-/* ---- Export (code ready to paste) ---- */
-
-.export { padding-top: 48px; }
-.export__intro { padding-bottom: 20px; display: flex; flex-direction: column; gap: 10px; }
-.export__intro h2 {
+/* The 6 menus: two columns at every width. The arrow is drawn over the menu and the text never reaches it. */
+.selects {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px 10px;
+}
+.select-field { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.select { position: relative; }
+.select__control {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 100%;
+  min-height: var(--target);
   margin: 0;
-  font-size: var(--text-h2-small);
-  font-weight: 600;
-  letter-spacing: -0.015em;
-}
-.export__intro p { margin: 0; max-width: 680px; line-height: 1.55; color: var(--ink-2); }
-
-.chips {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  margin: 4px 0 0;
-  padding: 0;
-  list-style: none;
-}
-.chips li {
-  font-size: var(--text-chip);
+  padding: 0 calc(var(--select-chevron-gap) + var(--select-chevron-size) + 10px) 0 12px;
+  font: inherit;
+  font-size: var(--text-select);
+  color: var(--ink);
   background: var(--surface);
   border: 1px solid var(--line);
-  border-radius: var(--radius-pill);
-  padding: 5px 12px;
+  border-radius: var(--radius-button);
+  cursor: pointer;
+  text-overflow: ellipsis;
+}
+.select__icon {
+  position: absolute;
+  right: var(--select-chevron-gap);
+  top: 50%;
+  translate: 0 -50%;
+  width: var(--select-chevron-size);
+  height: var(--select-chevron-size);
+  color: var(--ink-2);
+  pointer-events: none;
 }
 
-.code-card {
-  border-radius: var(--radius-card);
+/* Get code: the one dark button of the panel, at the bottom. */
+.get-code {
+  margin-top: auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: var(--target-cta);
+  padding: 0 16px;
+  font: inherit;
+  font-size: var(--text-body);
+  font-weight: 500;
+  color: var(--surface);
+  background: var(--ink);
+  border: 0;
+  border-radius: var(--radius-cta);
+  cursor: pointer;
+}
+.get-code svg { flex: none; }
+
+/* ---- Code drawer (opened by Get code) and the copy message ---- */
+
+/* On a computer the drawer slides over the right side of the playground card (the card clips it).
+   Up to 900px wide it covers the whole screen (see "Small screens"). */
+.drawer {
+  position: absolute;
+  inset: 0 0 0 auto;
+  z-index: 2;
+  width: min(var(--drawer-width), 100%);
+  height: auto;
+  max-width: none;
+  max-height: none;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  flex-direction: column;
   background: var(--code-bg);
   color: var(--button-light);
-  overflow: hidden;
+  box-shadow: var(--shadow-drawer);
+  overscroll-behavior: contain;
 }
-.code-card :focus-visible { outline-color: var(--focus-on-dark); }
-.code-card__bar {
+.drawer[open] { display: flex; }
+.drawer :focus-visible { outline-color: var(--focus-on-dark); }
+
+.drawer__head {
   display: flex;
   justify-content: space-between;
-  align-items: center;
+  align-items: flex-start;
   gap: 12px;
-  flex-wrap: wrap;
-  padding: 12px 12px 0;
-  border-bottom: 1px solid var(--code-line);
+  padding: 20px 20px 4px 24px;
 }
+.drawer__titles { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.drawer__title {
+  margin: 0;
+  font-size: var(--text-drawer-title);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  line-height: 1.3;
+}
+.drawer__help { margin: 0; font-size: var(--text-chip); color: var(--code-muted); }
+.drawer__close {
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--target);
+  height: var(--target);
+  min-height: var(--target);
+  padding: 0;
+  color: var(--button-light);
+  background: transparent;
+  border: 1px solid var(--code-button-line);
+  border-radius: var(--radius-button);
+  cursor: pointer;
+}
+
+.drawer__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 0;
+  padding: 10px 24px 0;
+  list-style: none;
+}
+.drawer__chips li {
+  font-size: var(--text-chip-small);
+  color: var(--code-text);
+  border: 1px solid var(--code-button-line);
+  border-radius: var(--radius-pill);
+  padding: 4px 10px;
+}
+
 .tabs { display: flex; gap: 4px; flex-wrap: wrap; }
+.drawer__tabs { padding: 8px 12px 0; border-bottom: 1px solid var(--code-line); }
 .tab {
   font: inherit;
   font-size: var(--text-ui);
   min-height: var(--target);
-  padding: 0 16px;
+  padding: 0 14px;
   background: transparent;
   border: 0;
   border-bottom: 2px solid transparent;
@@ -455,10 +544,38 @@ a:hover { color: var(--link-hover); }
   cursor: pointer;
 }
 .tab[aria-pressed="true"] { color: var(--button-light); border-bottom-color: var(--button-light); }
-.code-card__actions { display: flex; gap: 8px; padding-bottom: 12px; }
+
+.drawer__code {
+  flex: 1 1 auto;
+  min-height: 0;
+  margin: 0;
+  padding: 20px 24px;
+  overflow: auto;
+  overscroll-behavior: contain;
+  font-family: var(--font-mono);
+  font-size: var(--text-code-small);
+  line-height: 1.7;
+  color: var(--code-text);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.drawer__code:focus-visible { outline-offset: -2px; }
+.drawer__code code { font: inherit; }
+
+.drawer__foot {
+  position: relative;
+  padding: 16px 24px 20px;
+  border-top: 1px solid var(--code-line);
+}
+.drawer__actions { display: flex; gap: 8px; }
 .code-button {
+  flex: 1 1 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
   font: inherit;
-  font-size: var(--text-chip);
+  font-size: var(--text-ui);
   min-height: var(--target);
   padding: 0 16px;
   border-radius: var(--radius-button);
@@ -468,17 +585,49 @@ a:hover { color: var(--link-hover); }
   cursor: pointer;
 }
 .code-button--solid { background: var(--button-light); border-color: var(--button-light); color: var(--ink); font-weight: 500; }
-.code-card pre {
-  margin: 0;
-  padding: 24px;
+
+/* When the clipboard is not allowed, the link shows in a field, selected, ready to copy by hand. */
+.drawer__fallback { display: flex; flex-direction: column; gap: 6px; margin-bottom: 12px; }
+.drawer__fallback-label { font-size: var(--text-label); color: var(--code-muted); }
+.drawer__field {
+  width: 100%;
+  min-height: var(--target);
+  padding: 0 12px;
   font-family: var(--font-mono);
-  font-size: var(--text-code);
-  line-height: 1.7;
+  font-size: var(--text-select);
   color: var(--code-text);
-  white-space: pre-wrap;
-  overflow-wrap: anywhere;
+  background: transparent;
+  border: 1px solid var(--code-button-line);
+  border-radius: var(--radius-button);
 }
-.code-card code { font: inherit; }
+
+/* The copy message sits just above the footer, so it never covers the buttons or the field. */
+.toast-region {
+  position: absolute;
+  left: 24px;
+  right: 24px;
+  bottom: calc(100% + 12px);
+  display: flex;
+  justify-content: center;
+  pointer-events: none;
+}
+.toast {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 16px;
+  font-size: var(--text-ui);
+  font-weight: 500;
+  color: var(--ink);
+  background: var(--surface);
+  border-radius: var(--radius-cta);
+  box-shadow: var(--shadow-toast);
+}
+.toast__icon { flex: none; stroke-width: 2.5; }
+.toast__icon--ok { stroke: var(--toast-ok); }
+.toast__icon--error { stroke: var(--toast-error); }
+.toast[data-kind="ok"] .toast__icon--error,
+.toast[data-kind="error"] .toast__icon--ok { display: none; }
 
 /* ---- Features ---- */
 
@@ -923,11 +1072,44 @@ a:hover { color: var(--link-hover); }
   .playground__card { grid-template-columns: minmax(0, 1fr); }
   .settings { border-left: 0; border-top: 1px solid var(--line); }
   .preview { position: static; }
+
+  /* The code drawer covers the whole screen: title and close on top, the two buttons at the bottom, only the code scrolls. */
+  .drawer {
+    position: fixed;
+    inset: 0;
+    z-index: 20;
+    width: auto;
+    box-shadow: none;
+  }
+  .drawer__head, .drawer__chips, .drawer__tabs, .drawer__foot { flex: none; }
+  html:has(.drawer[open]) { overflow: hidden; }
+}
+
+/* A phone lying down: little height, so the chips stay in one row that scrolls sideways. */
+@media (max-width: 900px) and (max-height: 500px) {
+  .drawer__head { padding-top: 12px; }
+  .drawer__chips { flex-wrap: nowrap; overflow-x: auto; padding-top: 6px; }
+  .drawer__chips li { flex: none; }
+  .drawer__foot { padding-top: 12px; padding-bottom: 12px; }
+  /* The link field and its label share a row, so the code keeps room to be read. */
+  .drawer__fallback { flex-direction: row; align-items: center; gap: 12px; margin-bottom: 8px; }
+  .drawer__field { flex: 1 1 auto; width: auto; min-width: 0; }
 }
 
 @media (min-width: 901px) {
   /* A tall board next to the settings. On phones the game keeps its own height. */
   #preview { --snake-board-height: min(72vh, 640px); }
+}
+
+/* Stacked features: features.js moves the panel under the description of the open item (it is then a child of the <li>). */
+.feature > .feature-panel {
+  min-height: 0;
+  margin: 24px 0;
+}
+
+@media (pointer: coarse) {
+  /* Under 16px the iPhone zooms the page when a menu or a field gets the focus. */
+  :root { --text-select: 16px; }
 }
 
 @media (max-width: 600px) {
@@ -944,7 +1126,7 @@ a:hover { color: var(--link-hover); }
     to { opacity: 1; transform: none; }
   }
 
-  .brand, .pill-link, .btn, .choice, .segmented__item, .tab, .code-button, .feature__button, a {
+  .brand, .pill-link, .btn, .choice, .select__control, .get-code, .tab, .code-button, .drawer__close, .feature__button, a {
     transition: background-color 200ms ease-out, color 200ms ease-out, border-color 200ms ease-out, box-shadow 200ms ease-out;
   }
   .preview { transition: background-color 300ms ease; }
@@ -962,6 +1144,8 @@ a:hover { color: var(--link-hover); }
   .stack__tab { transition: background-color 200ms ease-out, color 200ms ease-out, box-shadow 200ms ease-out; }
   .browser__veil { transition: opacity 300ms ease; }
   .browser__modal { transition: transform 280ms cubic-bezier(0.2, 0.8, 0.2, 1); }
+  .drawer[open] { animation: drawer-in 250ms ease-out; }
+  .toast:not([hidden]) { animation: toast-in 200ms ease-out; }
   .caret { animation: blink 1s steps(1) infinite; }
   .lb__row { animation: rise 240ms ease-out both; }
   .lb__row:nth-child(2) { animation-delay: 40ms; }
@@ -969,9 +1153,20 @@ a:hover { color: var(--link-hover); }
   .lb__row:nth-child(4) { animation-delay: 120ms; }
   .lb__row:nth-child(5) { animation-delay: 160ms; }
   .sr__bubble[data-on] { animation: rise 300ms ease both; }
-  .scene:not([hidden]) .scene__frame { animation: rise 300ms ease; }
+  /* On the wrapper, not on .scene__frame: the frame already has transform: scale(), and a keyframe transform would drop the scale for 300 ms and push the page wider on a phone. */
+  .scene:not([hidden]) { animation: rise 300ms ease; }
 
   .features[data-paused] * { animation-play-state: paused; }
+
+  @keyframes drawer-in {
+    from { opacity: 0; transform: translateX(32px); }
+    to { opacity: 1; transform: none; }
+  }
+
+  @keyframes toast-in {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: none; }
+  }
 
   @keyframes blink {
     0%, 49% { opacity: 1; }

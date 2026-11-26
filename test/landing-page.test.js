@@ -5,11 +5,12 @@ import { join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { gzipSync } from 'node:zlib';
 import { LITERALS } from './literals.js';
-import { COLOR_KEYS, GAP_RANGE, OPTIONS } from '../site/config.js';
+import { COLOR_KEYS, GAP_RANGE, OPTIONS, defaultState } from '../site/config.js';
 
 const root = resolve(fileURLToPath(new URL('..', import.meta.url)));
 const read = (file) => readFileSync(join(root, file), 'utf8');
 const html = read('index.html');
+const DEFAULT_STATE = defaultState();
 const css = read('site/landing.css');
 const SITE_JS = readdirSync(join(root, 'site')).filter((f) => f.endsWith('.js')).map((f) => `site/${f}`);
 const features = html.slice(html.indexOf('id="features"'), html.indexOf('id="faq"'));
@@ -58,9 +59,19 @@ test('the version and the sizes shown on the page match the project', () => {
 test('every button has type="button"; aria-pressed only on buttons; the settings match config.js', () => {
   for (const tag of html.matchAll(/<button\b[^>]*>/g)) assert.match(tag[0], /\btype="button"/, tag[0]);
   for (const tag of html.matchAll(/<(\w+)\b[^>]*\baria-pressed=/g)) assert.equal(tag[1], 'button');
-  for (const [group, options] of Object.entries(OPTIONS)) {
-    const values = [...html.matchAll(new RegExp(`data-group="${group}" data-value="([^"]+)"`, 'g'))].map((m) => m[1]);
-    assert.deepEqual(values, options.map((o) => o.id), `settings of ${group}`);
+  const skins = [...html.matchAll(/<button\b[^>]*data-group="skin" data-value="([^"]+)"/g)].map((m) => m[1]);
+  assert.deepEqual(skins, OPTIONS.skin.map((o) => o.id), 'settings of skin');
+  assert.ok(!/data-group="(?!skin")/.test(html), 'only the skin uses button groups; the other settings are menus');
+  for (const group of Object.keys(OPTIONS).filter((g) => g !== 'skin')) {
+    const block = html.match(new RegExp(`<select\\b[^>]*id="set-${group}"[^>]*data-setting="${group}"[^>]*>([\\s\\S]*?)</select>`));
+    assert.ok(block, `no <select id="set-${group}" data-setting="${group}">`);
+    assert.match(html, new RegExp(`<label\\b[^>]*for="set-${group}"`), `no label for set-${group}`);
+    const options = [...block[1].matchAll(/<option value="([^"]+)"([^>]*)>([^<]*)<\/option>/g)];
+    assert.deepEqual(options.map((m) => m[1]), OPTIONS[group].map((o) => o.id), `options of ${group}`);
+    assert.deepEqual(options.map((m) => m[3]), OPTIONS[group].map((o) => o.label), `labels of ${group}`);
+    const selected = options.filter((m) => /\bselected\b/.test(m[2]));
+    assert.equal(selected.length, 1, `${group} needs exactly one default`);
+    assert.equal(selected[0][1], DEFAULT_STATE[group], `default of ${group}`);
   }
   for (const key of COLOR_KEYS) assert.ok(html.includes(`data-color="${key}"`), key);
   assert.ok(html.includes(`min="${GAP_RANGE.min}" max="${GAP_RANGE.max}" step="${GAP_RANGE.step}" value="${GAP_RANGE.initial}"`));
@@ -166,5 +177,22 @@ test('index.html loads the game, the 3 skins, the addon and the landing script, 
   for (const skin of ['natal', 'halloween', 'carnaval']) assert.match(html, new RegExp(`<script src="skins/${skin}\\.js"></script>`));
   assert.match(html, /<script src="addons\/leaderboard\.js"><\/script>/);
   assert.match(html, /<script type="module" src="site\/landing\.js"><\/script>/);
-  assert.match(html, /<snake-game id="preview" mode="inline"><\/snake-game>/);
+  assert.match(html, /<snake-game id="preview" mode="inline" text-paused="Paused\. Press Resume or Space to play\."><\/snake-game>/);
+});
+
+// ---- features on a phone: the panel moves under the description of the open item (card 9) ----
+
+test('features.js moves the panel in both directions, follows matchMedia and keeps the focus', () => {
+  const js = read('site/features.js');
+  assert.match(js, /matchMedia\(/);
+  assert.match(js, /--features-stacked-max/);
+  assert.match(js, /items\[index\]\.append\(panel\)/, 'stacked: the panel goes into the open item');
+  assert.match(js, /list\.after\(panel\)/, 'side by side: the panel goes back after the list');
+  assert.match(js, /stackedQuery\.addEventListener\('change', placePanel\)/);
+  assert.match(js, /held\.focus\(\{ preventScroll: true \}\)/);
+  assert.ok(!/aria-live/.test(js));
+  assert.match(css, /--features-stacked-max:\s*943\.98px/);
+  // The entrance animation of a scene is on .scene, not on the scaled .scene__frame (it would drop the scale for 300 ms).
+  assert.match(css, /\.scene:not\(\[hidden\]\)\s*\{\s*animation:\s*rise/);
+  assert.ok(!/\.scene__frame\s*\{\s*animation/.test(css));
 });

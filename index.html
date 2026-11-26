@@ -38,123 +38,160 @@
       <div class="playground__card">
         <div class="stage">
           <div class="preview" id="preview-card">
-            <snake-game id="preview" mode="inline"></snake-game>
+            <snake-game id="preview" mode="inline" text-paused="Paused. Press Resume or Space to play."></snake-game>
             <button type="button" class="btn preview__show" id="show-game" hidden>Show the game</button>
           </div>
           <p class="caption">Click the board, then use arrow keys or WASD · swipe on phones · Space to pause</p>
         </div>
 
         <aside class="settings" aria-label="Settings">
-        <div class="field" role="group" aria-labelledby="label-skin">
-          <p class="field__label" id="label-skin">Skin</p>
-          <div class="choice-grid">
-            <button type="button" class="choice" data-group="skin" data-value="default" aria-pressed="true"><span class="choice__icon" aria-hidden="true">🐍</span><span>Default</span></button>
-            <button type="button" class="choice" data-group="skin" data-value="natal" aria-pressed="false"><span class="choice__icon" aria-hidden="true">🎄</span><span>Christmas</span></button>
-            <button type="button" class="choice" data-group="skin" data-value="halloween" aria-pressed="false"><span class="choice__icon" aria-hidden="true">🎃</span><span>Halloween</span></button>
-            <button type="button" class="choice" data-group="skin" data-value="carnaval" aria-pressed="false"><span class="choice__icon" aria-hidden="true">🎉</span><span>Carnival</span></button>
+          <!-- Icons in this panel and in the code drawer are from Lucide (https://lucide.dev), © Lucide Contributors, ISC license. -->
+          <div class="field" role="group" aria-labelledby="label-skin">
+            <p class="field__label" id="label-skin">Skin</p>
+            <div class="choice-grid">
+              <button type="button" class="choice" data-group="skin" data-value="default" aria-pressed="true"><span class="choice__icon" aria-hidden="true">🐍</span><span>Default</span></button>
+              <button type="button" class="choice" data-group="skin" data-value="natal" aria-pressed="false"><span class="choice__icon" aria-hidden="true">🎄</span><span>Christmas</span></button>
+              <button type="button" class="choice" data-group="skin" data-value="halloween" aria-pressed="false"><span class="choice__icon" aria-hidden="true">🎃</span><span>Halloween</span></button>
+              <button type="button" class="choice" data-group="skin" data-value="carnaval" aria-pressed="false"><span class="choice__icon" aria-hidden="true">🎉</span><span>Carnival</span></button>
+            </div>
           </div>
-        </div>
-        <div class="field" role="group" aria-labelledby="label-grid">
-          <p class="field__label" id="label-grid">Grid</p>
-          <div class="segmented">
-            <button type="button" class="segmented__item" data-group="grid" data-value="dots" aria-pressed="true">Dots</button>
-            <button type="button" class="segmented__item" data-group="grid" data-value="squares" aria-pressed="false">Squares</button>
-            <button type="button" class="segmented__item" data-group="grid" data-value="lines" aria-pressed="false">Lines</button>
-            <button type="button" class="segmented__item" data-group="grid" data-value="none" aria-pressed="false">None</button>
+          <div class="field" role="group" aria-labelledby="label-colors">
+            <p class="field__label" id="label-colors">Colors</p>
+            <div class="color-picks">
+              <label class="color-pick">
+                <input type="color" class="color-pick__input" data-color="color">
+                <span class="color-pick__name">Snake</span>
+                <span class="visually-hidden" data-color-value="color"></span>
+              </label>
+              <label class="color-pick">
+                <input type="color" class="color-pick__input" data-color="food-color">
+                <span class="color-pick__name">Food</span>
+                <span class="visually-hidden" data-color-value="food-color"></span>
+              </label>
+              <label class="color-pick">
+                <input type="color" class="color-pick__input" data-color="grid-color">
+                <span class="color-pick__name">Grid</span>
+                <span class="visually-hidden" data-color-value="grid-color"></span>
+              </label>
+              <label class="color-pick">
+                <input type="color" class="color-pick__input" data-color="background">
+                <span class="color-pick__name">Background</span>
+                <span class="visually-hidden" data-color-value="background"></span>
+              </label>
+            </div>
           </div>
-        </div>
-        <div class="field" role="group" aria-labelledby="label-snake">
-          <p class="field__label" id="label-snake">Snake</p>
-          <div class="segmented">
-            <button type="button" class="segmented__item" data-group="snake" data-value="taper" aria-pressed="true">Taper</button>
-            <button type="button" class="segmented__item" data-group="snake" data-value="uniform" aria-pressed="false">Uniform</button>
+          <div class="field">
+            <div class="field__head">
+              <label class="field__label" for="gap">Gap</label>
+              <output class="field__value" id="gap-output" for="gap"></output>
+            </div>
+            <input class="range" id="gap" type="range" min="0" max="10" step="1" value="2">
           </div>
-        </div>
-        <div class="field">
-          <div class="field__head">
-            <label class="field__label" for="gap">Gap</label>
-            <output class="field__value" id="gap-output" for="gap"></output>
+          <div class="selects">
+          <div class="select-field">
+            <label class="field__label" for="set-grid">Grid</label>
+            <div class="select">
+              <select class="select__control" id="set-grid" data-setting="grid">
+                <option value="dots" selected>Dots</option>
+                <option value="squares">Squares</option>
+                <option value="lines">Lines</option>
+                <option value="none">None</option>
+              </select>
+              <svg class="select__icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
+            </div>
           </div>
-          <input class="range" id="gap" type="range" min="0" max="10" step="1" value="2">
-        </div>
-        <div class="field" role="group" aria-labelledby="label-colors">
-          <p class="field__label" id="label-colors">Colors</p>
-          <label class="color-row">
-            <input type="color" class="color-row__input" data-color="color">
-            <span class="color-row__name">Snake</span>
-            <output class="color-row__value" data-color-value="color"></output>
-          </label>
-          <label class="color-row">
-            <input type="color" class="color-row__input" data-color="food-color">
-            <span class="color-row__name">Food</span>
-            <output class="color-row__value" data-color-value="food-color"></output>
-          </label>
-          <label class="color-row">
-            <input type="color" class="color-row__input" data-color="grid-color">
-            <span class="color-row__name">Grid</span>
-            <output class="color-row__value" data-color-value="grid-color"></output>
-          </label>
-          <label class="color-row">
-            <input type="color" class="color-row__input" data-color="background">
-            <span class="color-row__name">Background</span>
-            <output class="color-row__value" data-color-value="background"></output>
-          </label>
-        </div>
-        <div class="field" role="group" aria-labelledby="label-walls">
-          <p class="field__label" id="label-walls">Walls</p>
-          <div class="segmented">
-            <button type="button" class="segmented__item" data-group="walls" data-value="solid" aria-pressed="true">Solid</button>
-            <button type="button" class="segmented__item" data-group="walls" data-value="wrap" aria-pressed="false">Wrap</button>
+          <div class="select-field">
+            <label class="field__label" for="set-snake">Snake</label>
+            <div class="select">
+              <select class="select__control" id="set-snake" data-setting="snake">
+                <option value="taper" selected>Taper</option>
+                <option value="uniform">Uniform</option>
+              </select>
+              <svg class="select__icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
+            </div>
           </div>
-        </div>
-        <div class="field" role="group" aria-labelledby="label-intro">
-          <p class="field__label" id="label-intro">Intro</p>
-          <div class="segmented">
-            <button type="button" class="segmented__item" data-group="intro" data-value="wave" aria-pressed="true">Wave</button>
-            <button type="button" class="segmented__item" data-group="intro" data-value="cascade" aria-pressed="false">Cascade</button>
-            <button type="button" class="segmented__item" data-group="intro" data-value="off" aria-pressed="false">Off</button>
+          <div class="select-field">
+            <label class="field__label" for="set-walls">Walls</label>
+            <div class="select">
+              <select class="select__control" id="set-walls" data-setting="walls">
+                <option value="solid" selected>Solid</option>
+                <option value="wrap">Wrap</option>
+              </select>
+              <svg class="select__icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
+            </div>
           </div>
-        </div>
-        <div class="field" role="group" aria-labelledby="label-speed">
-          <p class="field__label" id="label-speed">Speed</p>
-          <div class="segmented">
-            <button type="button" class="segmented__item" data-group="speed" data-value="slow" aria-pressed="false">Slow</button>
-            <button type="button" class="segmented__item" data-group="speed" data-value="classic" aria-pressed="true">Classic</button>
-            <button type="button" class="segmented__item" data-group="speed" data-value="fast" aria-pressed="false">Fast</button>
+          <div class="select-field">
+            <label class="field__label" for="set-intro">Intro</label>
+            <div class="select">
+              <select class="select__control" id="set-intro" data-setting="intro">
+                <option value="wave" selected>Wave</option>
+                <option value="cascade">Cascade</option>
+                <option value="off">Off</option>
+              </select>
+              <svg class="select__icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
+            </div>
           </div>
-        </div>
-        <div class="field" role="group" aria-labelledby="label-leaderboard">
-          <p class="field__label" id="label-leaderboard">Leaderboard</p>
-          <div class="segmented">
-            <button type="button" class="segmented__item" data-group="leaderboard" data-value="off" aria-pressed="false">Off</button>
-            <button type="button" class="segmented__item" data-group="leaderboard" data-value="local" aria-pressed="true">Local</button>
+          <div class="select-field">
+            <label class="field__label" for="set-speed">Speed</label>
+            <div class="select">
+              <select class="select__control" id="set-speed" data-setting="speed">
+                <option value="slow">Slow</option>
+                <option value="classic" selected>Classic</option>
+                <option value="fast">Fast</option>
+              </select>
+              <svg class="select__icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
+            </div>
           </div>
-        </div>
+          <div class="select-field">
+            <label class="field__label" for="set-leaderboard">Leaderboard</label>
+            <div class="select">
+              <select class="select__control" id="set-leaderboard" data-setting="leaderboard">
+                <option value="off">Off</option>
+                <option value="local" selected>Local</option>
+              </select>
+              <svg class="select__icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
+            </div>
+          </div>
+          </div>
+          <button type="button" class="get-code" id="get-code" aria-expanded="false" aria-controls="code-drawer">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m16 18 6-6-6-6"/><path d="m8 6-6 6 6 6"/></svg><span>Get code</span>
+          </button>
         </aside>
-      </div>
-    </section>
 
-    <section id="export" class="export wrap" aria-labelledby="export-title">
-      <div class="export__intro">
-        <h2 id="export-title">Your game, ready to paste</h2>
-        <p>This code carries everything you set up above. Paste it on your site and the snake shows up exactly as you see it in the preview.</p>
-        <ul class="chips" id="summary" aria-label="Your setup"></ul>
-      </div>
-      <div class="code-card">
-        <div class="code-card__bar">
-          <div class="tabs" role="group" aria-label="Code format">
+        <dialog class="drawer" id="code-drawer" aria-labelledby="drawer-title" aria-describedby="drawer-help" hidden>
+          <div class="drawer__head">
+            <div class="drawer__titles">
+              <h2 class="drawer__title" id="drawer-title">Code for this setup</h2>
+              <p class="drawer__help" id="drawer-help">Close to keep tweaking. The code follows your changes.</p>
+            </div>
+            <button type="button" class="drawer__close" id="drawer-close" aria-label="Close code"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button>
+          </div>
+          <ul class="drawer__chips" id="summary" aria-label="Your setup"></ul>
+          <div class="tabs drawer__tabs" role="group" aria-label="Code format">
             <button type="button" class="tab" data-format="html" aria-pressed="true">HTML</button>
             <button type="button" class="tab" data-format="css" aria-pressed="false">CSS tokens</button>
             <button type="button" class="tab" data-format="prompt" aria-pressed="false">Prompt for AI</button>
           </div>
-          <div class="code-card__actions">
-            <button type="button" class="code-button" id="copy-link">Copy link</button>
-            <button type="button" class="code-button code-button--solid" id="copy-code">Copy</button>
+          <pre class="drawer__code" tabindex="0" role="region" aria-label="Code"><code id="code"></code></pre>
+          <div class="drawer__foot">
+            <div class="toast-region" role="status">
+              <div class="toast" id="toast" data-kind="ok" hidden>
+                <svg class="toast__icon toast__icon--ok" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>
+                <svg class="toast__icon toast__icon--error" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><line x1="12" x2="12" y1="8" y2="12"/><line x1="12" x2="12.01" y1="16" y2="16"/></svg>
+                <span id="toast-text"></span>
+              </div>
+            </div>
+            <div class="drawer__fallback" id="link-fallback" hidden>
+              <label class="drawer__fallback-label" for="link-field">Your link, ready to copy by hand</label>
+              <input class="drawer__field" id="link-field" type="text" readonly>
+            </div>
+            <div class="drawer__actions">
+              <button type="button" class="code-button" id="copy-link">Copy link</button>
+              <button type="button" class="code-button code-button--solid" id="copy-code">Copy code</button>
+            </div>
           </div>
-        </div>
-        <pre><code id="code"></code></pre>
+        </dialog>
       </div>
-      <p class="visually-hidden" id="copy-status" role="status"></p>
     </section>
 
     <section id="features" class="features wrap" aria-labelledby="features-title" data-motion="auto">

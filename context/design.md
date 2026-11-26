@@ -53,6 +53,8 @@ O fim de jogo com ranking usa os botões em pílula de sempre (`.btn`, 44 px) e 
 A landing (`index.html` + `site/`) é a página do projeto; ela não faz parte do jogo.
 
 - **Onde ficam os valores:** as cores e os tamanhos da landing ficam só em `site/landing.css`: cores, tipografia, raios e medidas principais (largura do conteúdo, gutter, alvo de 44 px, quadro e célula das cenas) como variáveis no `:root`, no topo; espaçamentos e medidas de um componente ficam junto do componente. Nenhuma cor (hex ou função) fora do `:root`; a única exceção é o véu da prévia, que mistura variáveis do `:root` com `color-mix`. Todo `font-size` e `border-radius` usa `var()` (os testes conferem). O `index.html` não tem `<style>`, `style=` nem script inline, e `site/*.js` não escreve cor nem `px` (os testes conferem). Repetir valores aqui não vale: a fonte é o CSS.
+- **Topo no celular:** em telas de até 430 px, a badge de versão some, para o "View on GitHub" caber na mesma linha do logo.
+- **Prévia pausada:** o jogo da prévia abre pausado e diz "Paused. Press Resume or Space to play." (`text-paused`, só na prévia: não entra no código gerado). O Espaço inicia o jogo quando pelo menos metade do cartão da prévia está à vista e o foco não está em nenhum controle; fora disso o Espaço segue normal (rola a página, aciona botões).
 - **Fontes:** Inter e JetBrains Mono, pedidas só no `index.html` (Google Fonts, com `display=swap` e fonte do sistema de reserva). O jogo não herda a fonte da página: a landing nunca define `--snake-font`.
 - **Contrastes medidos (WCAG, mínimo de 4,5:1 para texto):**
 
@@ -63,10 +65,25 @@ A landing (`index.html` + `site/`) é a página do projeto; ela não faz parte d
 | título de feature inativo sobre a página | 4,59:1 |
 | texto do código sobre o fundo escuro | 15,04:1 |
 | comentário e aba inativa sobre o fundo escuro | 7,49:1 |
+| ícone ✓ do aviso de cópia (verde) sobre branco | 3,30:1 (gráfico, mínimo de 3:1) |
+| ícone de alerta do aviso de erro (vermelho) sobre branco | 4,83:1 |
 
-- **Alvos de toque:** todo botão e controle com pelo menos 44 px de altura (inclusive o controle segmentado).
+- **Alvos de toque:** todo botão e controle com pelo menos 44 px de altura (inclusive os menus); o botão Get code tem 48 px.
 - **Movimento:** transições, animações e `@keyframes` só dentro de `@media (prefers-reduced-motion: no-preference)`. As animações movem só `transform` e `opacity`; cores, bordas e sombras podem ter transição. Com movimento reduzido, as ilustrações ficam paradas, a barra de tempo fica cheia e nada troca sozinho. O botão "Pause animations" e a pausa com mouse ou foco na seção cobrem a regra de pausar movimento (WCAG 2.2.2).
 - **Foco:** `:focus-visible` com contorno de 2 px afastado 2 px; no cartão escuro, a cor clara da página.
+
+### Painel compacto, gaveta de código e aviso de cópia (card 9)
+
+- **Painel:** Skin em 2×2; Colors em 4 amostras numa linha (`.color-pick`, o `input type="color"` de verdade, com o nome embaixo e o valor só para o leitor de tela); Gap; e 6 menus nativos (`select`) com rótulo, em 2 colunas em qualquer largura; no fim, o botão preto Get code. Ícones do Lucide (ISC), com o comentário da licença no `index.html`.
+- **Menu (`.select`):** a seta fica a 14 px da borda direita (`--select-chevron-gap`) e o texto nunca encosta nela (o `padding` direito soma a distância, o tamanho da seta e 10 px). O texto é de 14 px no computador e de 16 px em tela de toque (`--text-select`, em `@media (pointer: coarse)`): abaixo de 16 px o iPhone dá zoom na página ao focar o campo.
+- **Gaveta (`.drawer`):** uma `<dialog>` não modal, aberta pelo Get code, escura (`--code-bg`). No computador tem 560 px (`--drawer-width`) e cobre o lado direito do cartão do playground, que a recorta. Até 900 px de largura (quando o painel está embaixo do jogo) cobre a tela inteira: título e × no alto, Copy link e Copy code no rodapé, só o código rola, e a página de trás fica parada (`overflow: hidden`) e `inert`. Em tela baixa (até 500 px de altura) as pílulas ficam numa linha que desliza. Entra em 250 ms (`ease-out`, `transform` e `opacity`).
+- **Comportamento:** o foco vai para o ×; Tab fica preso dentro; Esc e × fecham e devolvem o foco ao Get code; um clique fora fecha e o foco fica no que foi clicado. A última aba escolhida continua escolhida.
+- **Aviso de cópia (`.toast`):** fundo branco, ícone de ✓ verde (`--toast-ok`) ou de alerta vermelho (`--toast-error`) que só pintam o traço do ícone; a mensagem em texto, então a cor não é o único sinal. Fica acima do rodapé da gaveta, dentro de um `role="status"`. Sucesso: 2,6 s. Erro: 6 s. Quando a cópia falha, o código fica selecionado (Copy code) ou o link aparece num campo já selecionado (Copy link).
+- **Movimento reduzido:** a gaveta e o aviso aparecem sem animação.
+
+### Features no celular
+
+- Quando a lista e o painel das animações ficam numa coluna só (até 943,98 px de largura, `--features-stacked-max`), o painel da animação se move para dentro do item aberto, logo abaixo da descrição e da barra de progresso, e acompanha a troca de item (`site/features.js`). Lado a lado, no computador, o painel fica na coluna da direita, como antes. A passagem do mouse só abre itens lado a lado; empilhado, só o clique.
 
 ## Referências visuais
 
