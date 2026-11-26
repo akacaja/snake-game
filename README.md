@@ -2,7 +2,7 @@
 
 [Português (Brasil)](README.pt-BR.md)
 
-Live demo: https://akacaja.github.io/snake-game/demo/
+Landing page with a playground: https://akacaja.github.io/snake-game/ · Live demo: https://akacaja.github.io/snake-game/demo/
 
 A snake game as a web component. Add one script, add one tag, and the game shows up. No dependencies, no framework.
 
@@ -302,7 +302,7 @@ From the single file it is `SnakeGame.createEngine(...)`. The global `SnakeGame`
 ```sh
 npm test                 # automatic tests (Node, no dependencies)
 npm run build            # regenerates dist/snake-game.js, addons/ and skins/
-node scripts/serve.js    # http://localhost:8000/demo/ and /examples/module.html
+node scripts/serve.js    # landing page at http://localhost:8000/, demo at /demo/, and /examples/module.html
 npm run serve:pages      # same, under /snake-game/ like GitHub Pages
 ```
 
