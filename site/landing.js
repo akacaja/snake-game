@@ -98,6 +98,7 @@ async function openQuietly({ keepFocus = false } = {}) {
   const run = ++introRun;
   quiet = true;
   const previous = document.activeElement;
+  const { scrollX, scrollY } = window;
   preview.open();
   if (!keepFocus) {
     const inner = preview.shadowRoot.activeElement;
@@ -106,6 +107,14 @@ async function openQuietly({ keepFocus = false } = {}) {
   }
   const engine = await waitForEngine();
   if (run !== introRun) return; // a newer opening took over (it clears quiet by itself)
+  // With reduced motion the first game starts paused and the game then focuses its "Play" button without
+  // preventScroll (and takes the focus). Undo both here, in the same tick, like closeQuietly does.
+  if (!keepFocus) {
+    const inner = preview.shadowRoot.activeElement;
+    if (inner) inner.blur();
+    if (previous && previous !== document.body && previous.isConnected) previous.focus({ preventScroll: true });
+  }
+  if (window.scrollX !== scrollX || window.scrollY !== scrollY) window.scrollTo(scrollX, scrollY);
   if (engine && engine.getState().status === 'running') {
     const intro = state.intro === 'off' ? 0 : parseTime(computed('--_intro-duration'));
     introTimer = setTimeout(() => { if (run === introRun && isRunning()) preview.pause(); }, intro + parseTime(computed('--_duration')) + 60);
@@ -161,6 +170,26 @@ if (playground && 'IntersectionObserver' in window) {
     }
   }).observe(playground);
 }
+
+// Space on the open page: when nothing interactive has the focus, the drawer is closed, the preview is open and paused
+// and at least half of the preview card is on screen, Space plays the game (focus on the board, no page scroll). Anything else
+// keeps Space normal (scroll, buttons, fields).
+const INTERACTIVE = 'input, textarea, select, button, a[href], summary, dialog, [contenteditable], [tabindex], snake-game';
+document.addEventListener('keydown', (event) => {
+  if (event.key !== ' ' || event.repeat || event.defaultPrevented) return;
+  if (event.ctrlKey || event.metaKey || event.altKey || event.shiftKey) return;
+  const focused = document.activeElement;
+  if (focused && focused !== document.body && focused !== document.documentElement && focused.closest(INTERACTIVE)) return;
+  if (drawerEl.open || !preview.isOpen || !preview.engine) return;
+  if (preview.engine.getState().status !== 'paused') return;
+  const box = card.getBoundingClientRect();
+  const seen = Math.min(box.bottom, window.innerHeight) - Math.max(box.top, 0);
+  if (seen < box.height / 2) return; // less than half of the board in view: Space keeps scrolling the page
+  event.preventDefault();
+  clearTimeout(introTimer);
+  preview.shadowRoot.querySelector('.board').focus({ preventScroll: true });
+  preview.resume();
+});
 
 // Walls and Speed only count in a new game: restart and show it paused.
 function restartPaused() {
@@ -379,6 +408,7 @@ function shareLink() {
 $('#copy-code').addEventListener('click', async (event) => {
   const button = event.currentTarget; // currentTarget is gone after an await
   const copied = await copyText(codeEl.textContent);
+  if (!drawerEl.open) return; // the drawer was closed while copying: no message, no field
   if (document.activeElement !== button) button.focus({ preventScroll: true }); // the fallback textarea took the focus
   if (copied) {
     showToast('ok', TOAST_TEXT.code);
@@ -392,6 +422,7 @@ $('#copy-link').addEventListener('click', async (event) => {
   const button = event.currentTarget;
   const link = shareLink();
   const copied = await copyText(link);
+  if (!drawerEl.open) return;
   if (copied) {
     hideLinkFallback();
     if (document.activeElement !== button) button.focus({ preventScroll: true });

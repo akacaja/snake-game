@@ -25,6 +25,7 @@ const FROZEN = {
   'site/config.js': '797a8c90a42475c06baba2ff7b62f0f9167ee84a44049f92e769682964952f86',
   'site/scenes.js': '5c4f070dae04dda62dc12dc76c518464afff9e86c57953dc6736816a4cdb6fb9',
   cssFeaturesToFooterAndScenes: '201dd3df193288c97f7b721cdbe90fa2378928e70b233426735faf2c0fd7875a',
+  motionDesktopRules: '67966942617155d2859fc080b1a0093d85448983b187efc97b01e705142694cd',
   rootValues: '2f5395757cc82cf1439615220ece9b8975604c5641ecbd26eb36c11c7ecccd6d',
 };
 
@@ -73,4 +74,21 @@ test('every :root value that existed in 8cb27e5 is unchanged (new variables are 
   const kept = found.filter((v) => ROOT_NAMES.includes(v.name));
   assert.equal(kept.length, ROOT_NAMES.length, 'a :root variable of 8cb27e5 was removed or renamed');
   assert.equal(sha(kept.map((v) => v.line).join('\n')), FROZEN.rootValues);
+});
+
+// The desktop rules of the Motion block that belong to the playground, features and FAQ (.faq__chevron, .lb__row,
+// .sr__bubble, .features[data-paused], .seg, .layer and the others) and @keyframes rise, as in 8cb27e5.
+// Left out on purpose (changed or added in card 9): the shared transition list that starts with ".brand," (it gained the
+// drawer and menu controls), ".drawer[open]", ".toast:not([hidden])", and the rule of ".scene", which changed on purpose
+// in card 9 (.scene__frame -> .scene). Comment lines are ignored.
+test('the desktop Motion rules of features and FAQ are the same as in 8cb27e5 (except .scene, changed on purpose)', () => {
+  const css = read('site/landing.css');
+  const motion = css.indexOf('/* ---- Motion (the only place) ---- */');
+  const start = css.indexOf('@keyframes rise', motion);
+  const end = css.indexOf('\n', css.indexOf('.features[data-paused]', motion));
+  assert.ok(motion > 0 && start > motion && end > start);
+  const lines = css.slice(start, end).split('\n').filter((line) => (
+    !/^\s*\/\*/.test(line) && !/\.scene:not\(\[hidden\]\)|\.drawer\[open\]|\.toast:not/.test(line) && !/^\s*\.brand,/.test(line)
+  ));
+  assert.equal(sha(lines.join('\n')), FROZEN.motionDesktopRules);
 });

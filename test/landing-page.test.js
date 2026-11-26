@@ -177,7 +177,7 @@ test('index.html loads the game, the 3 skins, the addon and the landing script, 
   for (const skin of ['natal', 'halloween', 'carnaval']) assert.match(html, new RegExp(`<script src="skins/${skin}\\.js"></script>`));
   assert.match(html, /<script src="addons\/leaderboard\.js"><\/script>/);
   assert.match(html, /<script type="module" src="site\/landing\.js"><\/script>/);
-  assert.match(html, /<snake-game id="preview" mode="inline"><\/snake-game>/);
+  assert.match(html, /<snake-game id="preview" mode="inline" text-paused="Paused\. Press Resume or Space to play\."><\/snake-game>/);
 });
 
 // ---- features on a phone: the panel moves under the description of the open item (card 9) ----

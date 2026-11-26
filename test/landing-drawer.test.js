@@ -6,6 +6,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { ATTRIBUTE_NAMES, FORMATS, defaultState } from '../site/config.js';
 
 const root = resolve(fileURLToPath(new URL('..', import.meta.url)));
 const read = (file) => readFileSync(join(root, file), 'utf8');
@@ -200,6 +201,48 @@ test('landing.js: no prompt(), no copy-status, the 3 messages, the two times, an
   }
   assert.match(landingJs, /TOAST_MS = 2600/);
   assert.match(landingJs, /TOAST_ERROR_MS = 6000/);
+  const toastFn = landingJs.slice(landingJs.indexOf('function showToast'), landingJs.indexOf('function hideLinkFallback'));
+  assert.ok(toastFn.includes("kind === 'error' ? TOAST_ERROR_MS : TOAST_MS"), 'showToast picks the 6 s time for errors and the short one otherwise');
+  assert.equal([...landingJs.matchAll(/if \(!drawerEl\.open\) return;/g)].length, 2, 'both copy buttons stop when the drawer was closed');
   assert.match(landingJs, /\.select\(\)/);
   assert.match(landingJs, /setSelectionRange/);
+});
+
+test('features.js scrolls (scrollBy) only on the stacked path, and keeps it instant', () => {
+  const js = read('site/features.js').replace(/\/\/.*$/gm, '');
+  assert.equal((js.match(/scrollBy/g) || []).length, 1, 'one scrollBy only');
+  assert.match(js, /keepInPlace[^;]*stackedQuery\.matches/, 'keepInPlace depends on the stacked query');
+  assert.match(js, /if \(keepInPlace\) \{[\s\S]*?scrollBy\([^)]*behavior: 'instant'/, 'scrollBy sits inside if (keepInPlace), instant');
+});
+
+test('text-paused is only on the preview: out of ATTRIBUTE_NAMES, out of the generated code', () => {
+  const html = read('index.html');
+  assert.match(html, /<snake-game id="preview"[^>]*text-paused="Paused\. Press Resume or Space to play\."/);
+  assert.ok(!ATTRIBUTE_NAMES.includes('text-paused'), 'applyState would remove it');
+  for (const format of FORMATS) assert.ok(!format.make(defaultState()).includes('text-paused'), format.id);
+  assert.ok(!/text-paused/.test(read('site/config.js')));
+});
+
+test('landing.js: Space plays the paused preview only when nothing interactive has the focus, without scrolling', () => {
+  const js = landingJs.replace(/\/\/.*$/gm, '');
+  const start = js.indexOf("document.addEventListener('keydown'");
+  assert.ok(start > -1, 'document keydown for Space');
+  const block = js.slice(start, js.indexOf('preview.resume();', start) + 20);
+  for (const part of ['drawerEl.open', 'preview.isOpen', "'paused'", 'getBoundingClientRect', 'preventDefault()', 'preventScroll: true', 'preview.resume()', 'document.activeElement']) {
+    assert.ok(block.includes(part), part);
+  }
+  const list = (js.match(/const INTERACTIVE = '([^']*)'/) || [])[1];
+  assert.ok(list, 'the INTERACTIVE list');
+  for (const word of ['summary', 'button', 'select', 'input', 'a[href]', '[tabindex]', 'snake-game']) assert.ok(list.includes(word), `INTERACTIVE has ${word}`);
+  // preventDefault() comes after the last condition (the half-visible check) and before the game starts
+  assert.ok(block.indexOf('preventDefault()') > block.lastIndexOf('return;'), 'preventDefault() after the last return');
+  assert.ok(block.indexOf('preventDefault()') < block.indexOf('preview.resume()'));
+  assert.match(block, /seen < box\.height \/ 2\) return;/, 'half of the card must be visible');
+});
+
+test('landing.js: openQuietly keeps the scroll and the focus when the game opens paused (reduced motion)', () => {
+  const js = landingJs.replace(/\/\/.*$/gm, '');
+  const open = js.slice(js.indexOf('async function openQuietly'), js.indexOf('function closeQuietly'));
+  assert.match(open, /const \{ scrollX, scrollY \} = window;[\s\S]*preview\.open\(\)/);
+  assert.match(open, /await waitForEngine\(\)[\s\S]*window\.scrollTo\(scrollX, scrollY\)/);
 });

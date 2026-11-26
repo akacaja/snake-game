@@ -53,6 +53,8 @@ O fim de jogo com ranking usa os botões em pílula de sempre (`.btn`, 44 px) e 
 A landing (`index.html` + `site/`) é a página do projeto; ela não faz parte do jogo.
 
 - **Onde ficam os valores:** as cores e os tamanhos da landing ficam só em `site/landing.css`: cores, tipografia, raios e medidas principais (largura do conteúdo, gutter, alvo de 44 px, quadro e célula das cenas) como variáveis no `:root`, no topo; espaçamentos e medidas de um componente ficam junto do componente. Nenhuma cor (hex ou função) fora do `:root`; a única exceção é o véu da prévia, que mistura variáveis do `:root` com `color-mix`. Todo `font-size` e `border-radius` usa `var()` (os testes conferem). O `index.html` não tem `<style>`, `style=` nem script inline, e `site/*.js` não escreve cor nem `px` (os testes conferem). Repetir valores aqui não vale: a fonte é o CSS.
+- **Topo no celular:** em telas de até 430 px, a badge de versão some, para o "View on GitHub" caber na mesma linha do logo.
+- **Prévia pausada:** o jogo da prévia abre pausado e diz "Paused. Press Resume or Space to play." (`text-paused`, só na prévia: não entra no código gerado). O Espaço inicia o jogo quando pelo menos metade do cartão da prévia está à vista e o foco não está em nenhum controle; fora disso o Espaço segue normal (rola a página, aciona botões).
 - **Fontes:** Inter e JetBrains Mono, pedidas só no `index.html` (Google Fonts, com `display=swap` e fonte do sistema de reserva). O jogo não herda a fonte da página: a landing nunca define `--snake-font`.
 - **Contrastes medidos (WCAG, mínimo de 4,5:1 para texto):**
 

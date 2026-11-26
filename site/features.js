@@ -125,7 +125,14 @@ export function initFeatures() {
 
   // ---- the accordion ---------------------------------------------------------------------
 
-  function show(next) {
+  // `keepInPlace`: stacked, the open panel above leaves and the page would slide under the finger, so the
+  // button of the new item is held where it was on the screen. Only for a pick by the person, or an automatic
+  // change whose new item is on screen (so a page being read elsewhere is not pulled).
+  function show(next, byPerson = false) {
+    const nextButton = items[next].querySelector('.feature__button');
+    const topBefore = nextButton.getBoundingClientRect().top;
+    const onScreen = topBefore >= 0 && topBefore < window.innerHeight;
+    const keepInPlace = stackedQuery.matches && next !== index && (byPerson || onScreen);
     if (bar) {
       bar.cancel();
       bar = null;
@@ -146,6 +153,10 @@ export function initFeatures() {
     const button = items[index].querySelector('.feature__button');
     button.setAttribute('aria-expanded', 'true');
     items[index].querySelector('.feature__body').hidden = false;
+    if (keepInPlace) {
+      const shift = button.getBoundingClientRect().top - topBefore;
+      if (shift !== 0) window.scrollBy({ top: shift, left: 0, behavior: 'instant' });
+    }
 
     elapsed = 0;
     lastTick = -1;
@@ -169,7 +180,7 @@ export function initFeatures() {
       // Stacked, the layout moves under the pointer when an item opens, so hovering would open item after item.
       if (event.pointerType === 'mouse' && i !== index && !stackedQuery.matches) show(i);
     });
-    button.addEventListener('click', () => show(i));
+    button.addEventListener('click', () => show(i, true));
   });
 
   // The skin buttons of the first scene are real: they set the skin in the playground.

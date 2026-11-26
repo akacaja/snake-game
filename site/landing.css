@@ -218,6 +218,10 @@ a:hover { color: var(--link-hover); }
   border-radius: var(--radius-pill);
   padding: 3px 8px;
 }
+/* On narrow phones the version badge pushes "View on GitHub" to a second line; hide it there (card 9). */
+@media (max-width: 430px) {
+  .brand__version { display: none; }
+}
 .logo__dot { fill: var(--ink); }
 .logo__dot--accent { fill: var(--accent); }
 
