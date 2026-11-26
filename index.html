@@ -3,25 +3,400 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>snake-game</title>
+  <title>snake-game: a reusable snake game for your website</title>
+  <meta name="description" content="A snake game as a web component. Customize the skin, grid and colors, then copy the code into any site. Open source, one tag, no dependencies.">
   <link rel="icon" href="demo/favicon.svg" type="image/svg+xml">
-  <!-- TEMPORARY: this page only sends visitors to the demo. It will be replaced by the project landing page (see CHANGELOG.md, Next steps). -->
+  <!-- The only external request: the page fonts. Without them the page uses the system fonts. The game never uses them. -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;family=JetBrains+Mono:wght@400;500&amp;display=swap">
+  <link rel="stylesheet" href="site/landing.css">
 </head>
 <body>
+  <a class="skip-link" href="#playground">Skip to the playground</a>
+
+  <header class="site-header wrap">
+    <a class="brand" href="#top">
+      <svg width="44" height="14" viewBox="0 0 44 14" aria-hidden="true"><circle class="logo__dot" cx="7" cy="7" r="6"/><circle class="logo__dot" cx="19" cy="7" r="5"/><circle class="logo__dot" cx="29" cy="7" r="4"/><circle class="logo__dot logo__dot--accent" cx="40" cy="7" r="3"/></svg>
+      <span class="brand__name">snake-game</span>
+      <span class="brand__version">v0.3.1</span>
+    </a>
+    <a class="pill-link" href="https://github.com/akacaja/snake-game">View on GitHub <span aria-hidden="true">↗</span></a>
+  </header>
+
   <main>
-    <h1>snake-game</h1>
-    <p>Opening the demo… If nothing happens, <a id="demo-link" href="demo/">open the demo</a>.</p>
+    <section id="top" class="hero wrap">
+      <div class="hero__text">
+        <h1>A reusable snake game for your website.</h1>
+        <p>Customize the skin, grid and colors below, then copy the code and drop it into any site. Open source, one tag, no dependencies.</p>
+      </div>
+      <p class="hero__facts">15.4 KB gzipped · zero dependencies · MIT</p>
+    </section>
+
+    <section id="playground" class="playground wrap" aria-labelledby="playground-title">
+      <h2 id="playground-title" class="visually-hidden">Playground</h2>
+      <div class="playground__card">
+        <div class="stage">
+          <div class="preview" id="preview-card">
+            <snake-game id="preview" mode="inline"></snake-game>
+            <button type="button" class="btn preview__show" id="show-game" hidden>Show the game</button>
+          </div>
+          <p class="caption">Click the board, then use arrow keys or WASD · swipe on phones · Space to pause</p>
+        </div>
+
+        <aside class="settings" aria-label="Settings">
+        <div class="field" role="group" aria-labelledby="label-skin">
+          <p class="field__label" id="label-skin">Skin</p>
+          <div class="choice-grid">
+            <button type="button" class="choice" data-group="skin" data-value="default" aria-pressed="true"><span class="choice__icon" aria-hidden="true">🐍</span><span>Default</span></button>
+            <button type="button" class="choice" data-group="skin" data-value="natal" aria-pressed="false"><span class="choice__icon" aria-hidden="true">🎄</span><span>Christmas</span></button>
+            <button type="button" class="choice" data-group="skin" data-value="halloween" aria-pressed="false"><span class="choice__icon" aria-hidden="true">🎃</span><span>Halloween</span></button>
+            <button type="button" class="choice" data-group="skin" data-value="carnaval" aria-pressed="false"><span class="choice__icon" aria-hidden="true">🎉</span><span>Carnival</span></button>
+          </div>
+        </div>
+        <div class="field" role="group" aria-labelledby="label-grid">
+          <p class="field__label" id="label-grid">Grid</p>
+          <div class="segmented">
+            <button type="button" class="segmented__item" data-group="grid" data-value="dots" aria-pressed="true">Dots</button>
+            <button type="button" class="segmented__item" data-group="grid" data-value="squares" aria-pressed="false">Squares</button>
+            <button type="button" class="segmented__item" data-group="grid" data-value="lines" aria-pressed="false">Lines</button>
+            <button type="button" class="segmented__item" data-group="grid" data-value="none" aria-pressed="false">None</button>
+          </div>
+        </div>
+        <div class="field" role="group" aria-labelledby="label-snake">
+          <p class="field__label" id="label-snake">Snake</p>
+          <div class="segmented">
+            <button type="button" class="segmented__item" data-group="snake" data-value="taper" aria-pressed="true">Taper</button>
+            <button type="button" class="segmented__item" data-group="snake" data-value="uniform" aria-pressed="false">Uniform</button>
+          </div>
+        </div>
+        <div class="field">
+          <div class="field__head">
+            <label class="field__label" for="gap">Gap</label>
+            <output class="field__value" id="gap-output" for="gap"></output>
+          </div>
+          <input class="range" id="gap" type="range" min="0" max="10" step="1" value="2">
+        </div>
+        <div class="field" role="group" aria-labelledby="label-colors">
+          <p class="field__label" id="label-colors">Colors</p>
+          <label class="color-row">
+            <input type="color" class="color-row__input" data-color="color">
+            <span class="color-row__name">Snake</span>
+            <output class="color-row__value" data-color-value="color"></output>
+          </label>
+          <label class="color-row">
+            <input type="color" class="color-row__input" data-color="food-color">
+            <span class="color-row__name">Food</span>
+            <output class="color-row__value" data-color-value="food-color"></output>
+          </label>
+          <label class="color-row">
+            <input type="color" class="color-row__input" data-color="grid-color">
+            <span class="color-row__name">Grid</span>
+            <output class="color-row__value" data-color-value="grid-color"></output>
+          </label>
+          <label class="color-row">
+            <input type="color" class="color-row__input" data-color="background">
+            <span class="color-row__name">Background</span>
+            <output class="color-row__value" data-color-value="background"></output>
+          </label>
+        </div>
+        <div class="field" role="group" aria-labelledby="label-walls">
+          <p class="field__label" id="label-walls">Walls</p>
+          <div class="segmented">
+            <button type="button" class="segmented__item" data-group="walls" data-value="solid" aria-pressed="true">Solid</button>
+            <button type="button" class="segmented__item" data-group="walls" data-value="wrap" aria-pressed="false">Wrap</button>
+          </div>
+        </div>
+        <div class="field" role="group" aria-labelledby="label-intro">
+          <p class="field__label" id="label-intro">Intro</p>
+          <div class="segmented">
+            <button type="button" class="segmented__item" data-group="intro" data-value="wave" aria-pressed="true">Wave</button>
+            <button type="button" class="segmented__item" data-group="intro" data-value="cascade" aria-pressed="false">Cascade</button>
+            <button type="button" class="segmented__item" data-group="intro" data-value="off" aria-pressed="false">Off</button>
+          </div>
+        </div>
+        <div class="field" role="group" aria-labelledby="label-speed">
+          <p class="field__label" id="label-speed">Speed</p>
+          <div class="segmented">
+            <button type="button" class="segmented__item" data-group="speed" data-value="slow" aria-pressed="false">Slow</button>
+            <button type="button" class="segmented__item" data-group="speed" data-value="classic" aria-pressed="true">Classic</button>
+            <button type="button" class="segmented__item" data-group="speed" data-value="fast" aria-pressed="false">Fast</button>
+          </div>
+        </div>
+        <div class="field" role="group" aria-labelledby="label-leaderboard">
+          <p class="field__label" id="label-leaderboard">Leaderboard</p>
+          <div class="segmented">
+            <button type="button" class="segmented__item" data-group="leaderboard" data-value="off" aria-pressed="false">Off</button>
+            <button type="button" class="segmented__item" data-group="leaderboard" data-value="local" aria-pressed="true">Local</button>
+          </div>
+        </div>
+        </aside>
+      </div>
+    </section>
+
+    <section id="export" class="export wrap" aria-labelledby="export-title">
+      <div class="export__intro">
+        <h2 id="export-title">Your game, ready to paste</h2>
+        <p>This code carries everything you set up above. Paste it on your site and the snake shows up exactly as you see it in the preview.</p>
+        <ul class="chips" id="summary" aria-label="Your setup"></ul>
+      </div>
+      <div class="code-card">
+        <div class="code-card__bar">
+          <div class="tabs" role="group" aria-label="Code format">
+            <button type="button" class="tab" data-format="html" aria-pressed="true">HTML</button>
+            <button type="button" class="tab" data-format="css" aria-pressed="false">CSS tokens</button>
+            <button type="button" class="tab" data-format="prompt" aria-pressed="false">Prompt for AI</button>
+          </div>
+          <div class="code-card__actions">
+            <button type="button" class="code-button" id="copy-link">Copy link</button>
+            <button type="button" class="code-button code-button--solid" id="copy-code">Copy</button>
+          </div>
+        </div>
+        <pre><code id="code"></code></pre>
+      </div>
+      <p class="visually-hidden" id="copy-status" role="status"></p>
+    </section>
+
+    <section id="features" class="features wrap" aria-labelledby="features-title" data-motion="auto">
+      <h2 id="features-title">Small game, lots of room to make it yours</h2>
+      <div class="features__layout">
+        <ol class="feature-list">
+        <li class="feature" data-feature="skins">
+          <h3 class="feature__title"><button type="button" class="feature__button" id="feature-button-skins" aria-expanded="true" aria-controls="feature-body-skins">Seasonal skins</button></h3>
+          <div class="feature__body" id="feature-body-skins">
+            <p>Christmas, Halloween and Carnival, each an optional file with its own palette and emoji food. Turn the palette off to keep your colors, or register a skin of your own.</p>
+            <span class="feature__bar" aria-hidden="true"><span class="feature__fill"></span></span>
+          </div>
+        </li>
+        <li class="feature" data-feature="tokens">
+          <h3 class="feature__title"><button type="button" class="feature__button" id="feature-button-tokens" aria-expanded="false" aria-controls="feature-body-tokens">Themed with CSS variables</button></h3>
+          <div class="feature__body" id="feature-body-tokens" hidden>
+            <p>Colors, sizes and timing are tokens. Change one in your stylesheet and the game follows your brand, no code edits.</p>
+            <span class="feature__bar" aria-hidden="true"><span class="feature__fill"></span></span>
+          </div>
+        </li>
+        <li class="feature" data-feature="leaderboard">
+          <h3 class="feature__title"><button type="button" class="feature__button" id="feature-button-leaderboard" aria-expanded="false" aria-controls="feature-body-leaderboard">Optional leaderboard</button></h3>
+          <div class="feature__body" id="feature-body-leaderboard" hidden>
+            <p>Players save a username after each game. Scores stay in the browser, or point it to your own service for a global Top 10.</p>
+            <span class="feature__bar" aria-hidden="true"><span class="feature__fill"></span></span>
+          </div>
+        </li>
+        <li class="feature" data-feature="trigger">
+          <h3 class="feature__title"><button type="button" class="feature__button" id="feature-button-trigger" aria-expanded="false" aria-controls="feature-body-trigger">Any trigger</button></h3>
+          <div class="feature__body" id="feature-body-trigger" hidden>
+            <p>It starts closed. Open it from a secret code, a hidden click, a 404 page or a loading screen.</p>
+            <span class="feature__bar" aria-hidden="true"><span class="feature__fill"></span></span>
+          </div>
+        </li>
+        <li class="feature" data-feature="a11y">
+          <h3 class="feature__title"><button type="button" class="feature__button" id="feature-button-a11y" aria-expanded="false" aria-controls="feature-body-a11y">Accessible by default</button></h3>
+          <div class="feature__body" id="feature-body-a11y" hidden>
+            <p>Plays with keyboard and touch, announces score and food to screen readers, and starts paused when motion is reduced.</p>
+            <span class="feature__bar" aria-hidden="true"><span class="feature__fill"></span></span>
+          </div>
+        </li>
+        <li class="feature" data-feature="stack">
+          <h3 class="feature__title"><button type="button" class="feature__button" id="feature-button-stack" aria-expanded="false" aria-controls="feature-body-stack">Works in any stack</button></h3>
+          <div class="feature__body" id="feature-body-stack" hidden>
+            <p>A Web Component of 15.4 KB with zero dependencies. Plain HTML, Astro, React, Vue or WordPress.</p>
+            <span class="feature__bar" aria-hidden="true"><span class="feature__fill"></span></span>
+          </div>
+        </li>
+        </ol>
+
+        <div class="feature-panel">
+          <div class="feature-panel__stage">
+            <div class="scenes">
+              <div class="scene scene--skins" data-scene="skins">
+                <div class="scene__frame" data-el="root">
+                  <div class="skins">
+                    <div class="skins__chips">
+            <button type="button" class="chip" data-el="chip-0" data-pick-skin="default"><span aria-hidden="true">🐍</span> Default</button>
+            <button type="button" class="chip" data-el="chip-1" data-pick-skin="natal"><span aria-hidden="true">🎄</span> Christmas</button>
+            <button type="button" class="chip" data-el="chip-2" data-pick-skin="halloween"><span aria-hidden="true">🎃</span> Halloween</button>
+            <button type="button" class="chip" data-el="chip-3" data-pick-skin="carnaval"><span aria-hidden="true">🎉</span> Carnival</button>
+                    </div>
+                    <div class="mini-board" role="img" aria-label="Someone picks a seasonal skin above the board, and the moving snake, its food and the board switch to that theme.">
+              <span class="layer" data-el="layer-0" data-palette="default"></span>
+              <span class="layer" data-el="layer-1" data-palette="natal"></span>
+              <span class="layer" data-el="layer-2" data-palette="halloween"></span>
+              <span class="layer" data-el="layer-3" data-palette="carnaval"></span>
+              <span class="food food--skin" data-el="food-0"><span class="food__pop"><span class="food__dot"></span></span></span>
+              <span class="food food--skin" data-el="food-1"><span class="food__pop"><span class="food__emoji" aria-hidden="true">🎄</span></span></span>
+              <span class="food food--skin" data-el="food-2"><span class="food__pop"><span class="food__emoji" aria-hidden="true">👻</span></span></span>
+              <span class="food food--skin" data-el="food-3"><span class="food__pop"><span class="food__emoji" aria-hidden="true">💃</span></span></span>
+                      <span class="seg" data-el="seg-0"></span><span class="seg" data-el="seg-1"></span><span class="seg" data-el="seg-2"></span><span class="seg" data-el="seg-3"></span><span class="seg" data-el="seg-4"></span>
+                    </div>
+                  </div>
+                  <svg class="pointer" data-el="ptr" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path class="pointer__shape" d="M4 2l16 9-7 2-3 7z"/></svg>
+                </div>
+              </div>
+
+              <div class="scene scene--tokens" data-scene="tokens" hidden>
+                <div class="scene__frame" data-el="root">
+                  <div class="tokens" role="img" aria-label="Someone edits the --snake-color token and the preview snake changes color.">
+                    <div class="mini-code">
+                      <div class="mini-code__muted">/* your stylesheet */</div>
+                      <div>snake-game {</div>
+                      <div class="mini-code__line"><span class="swatch" aria-hidden="true"></span><span>--snake-color: <span class="hl" data-el="hl"><span data-el="value"></span></span><span class="caret" data-el="caret">|</span>;</span></div>
+                      <div class="mini-code__indent mini-code__spacing"></div>
+                      <div class="mini-code__indent mini-code__gap"></div>
+                      <div>}</div>
+                    </div>
+                    <div class="mini-board">
+                      <span class="seg" data-el="seg-0"></span><span class="seg" data-el="seg-1"></span><span class="seg" data-el="seg-2"></span><span class="seg" data-el="seg-3"></span><span class="seg" data-el="seg-4"></span>
+                      <span class="food"><span class="food__pop"><span class="food__dot"></span></span></span>
+                    </div>
+                    <p class="scene-caption">The preview follows your stylesheet</p>
+                  </div>
+                </div>
+              </div>
+
+              <div class="scene scene--leaderboard" data-scene="leaderboard" hidden>
+                <div class="scene__frame">
+                  <div class="lb" role="img" aria-label="A player types a username, saves it and appears second in the Top 10.">
+                    <div class="lb__panel lb__form" data-el="form">
+                      <p class="lb__title">Game over · 31 points</p>
+                      <div class="lb__fieldset">
+                        <span class="lb__label">Username</span>
+                        <span class="lb__field" data-el="field"><span data-el="name"></span><span class="caret" data-el="caret">|</span></span>
+                      </div>
+                      <div class="lb__buttons">
+                        <span class="lb__button lb__button--save" data-el="save">Save</span>
+                        <span class="lb__button">Skip</span>
+                      </div>
+                    </div>
+                    <div class="lb__panel" data-el="list" hidden>
+                      <p class="lb__top">Top 10</p>
+                      <ol class="lb__rows">
+              <li class="lb__row"><span>1</span><span>mika</span><span>38</span></li>
+              <li class="lb__row lb__row--me"><span>2</span><span>carol</span><span>31</span></li>
+              <li class="lb__row"><span>3</span><span>nando</span><span>27</span></li>
+              <li class="lb__row"><span>4</span><span>ju.s</span><span>19</span></li>
+              <li class="lb__row"><span>5</span><span>bea</span><span>12</span></li>
+                      </ol>
+                    </div>
+                    <svg class="pointer" data-el="ptr" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path class="pointer__shape" d="M4 2l16 9-7 2-3 7z"/></svg>
+                  </div>
+                </div>
+              </div>
+
+              <div class="scene scene--trigger" data-scene="trigger" hidden>
+                <div class="scene__frame">
+                  <div class="trigger" role="img" aria-label="A visitor on a 404 page types a secret code and the snake game opens.">
+                    <p class="scene-caption mono" data-el="caption">A visitor lands on a 404 page</p>
+                    <div class="browser">
+                      <div class="browser__bar"><span></span><span></span><span></span></div>
+                      <div class="browser__page"><span class="browser__code">404</span><span class="browser__text">Page not found</span></div>
+                      <div class="browser__keys"><span class="key" data-el="key-0">↑</span><span class="key" data-el="key-1">↑</span><span class="key" data-el="key-2">↓</span><span class="key" data-el="key-3">↓</span><span class="key" data-el="key-4">←</span><span class="key" data-el="key-5">→</span><span class="key" data-el="key-6">←</span><span class="key" data-el="key-7">→</span><span class="key" data-el="key-8">B</span><span class="key" data-el="key-9">A</span></div>
+                      <div class="browser__veil" data-el="veil">
+                        <div class="browser__modal mini-board" data-el="modal" data-skin="default">
+                          <span class="seg" data-el="seg-0"></span><span class="seg" data-el="seg-1"></span><span class="seg" data-el="seg-2"></span><span class="seg" data-el="seg-3"></span>
+                          <span class="food"><span class="food__pop"><span class="food__dot"></span></span></span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="scene scene--a11y" data-scene="a11y" hidden>
+                <div class="scene__frame">
+                  <div class="a11y" role="img" aria-label="The snake is steered with arrow keys while a screen reader announces what happens.">
+                    <div class="mini-board">
+                      <span class="food" data-el="food-gift"><span class="food__pop"><span class="food__emoji" aria-hidden="true">🎁</span></span></span>
+                      <span class="food" data-el="food-star"><span class="food__pop"><span class="food__emoji" aria-hidden="true">🌠</span></span></span>
+                      <span class="seg" data-el="seg-0"></span><span class="seg" data-el="seg-1"></span><span class="seg" data-el="seg-2"></span><span class="seg" data-el="seg-3"></span>
+                    </div>
+                    <div class="a11y__keys"><span class="key" data-el="key-0">↑</span><span class="key" data-el="key-1">←</span><span class="key" data-el="key-2">↓</span><span class="key" data-el="key-3">→</span></div>
+                    <div class="sr">
+                      <span class="sr__label">Screen reader</span>
+                      <span class="sr__bubble" data-el="bubble-gift">Ate gift. Score 1</span>
+                      <span class="sr__bubble" data-el="bubble-star">Ate star. Score 2</span>
+                      <span class="sr__bubble" data-el="bubble-paused">Paused</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="scene scene--stack" data-scene="stack" hidden>
+                <div class="scene__frame">
+                  <div class="stack" role="img" aria-label="The same snake-game tag is pasted into an HTML page and into files of several frameworks.">
+                    <div class="stack__tabs"><span class="stack__tab" data-el="tab-0">HTML</span><span class="stack__tab" data-el="tab-1">Astro</span><span class="stack__tab" data-el="tab-2">React</span><span class="stack__tab" data-el="tab-3">Vue</span><span class="stack__tab" data-el="tab-4">WordPress</span></div>
+                    <div class="mini-code">
+                      <div class="mini-code__muted" data-el="file"></div>
+                      <div class="mini-code__muted">&lt;script src=&quot;snake-game.js&quot;&gt;&lt;/script&gt;</div>
+                      <div class="stack__typed"><span data-el="typed"></span><span class="caret" data-el="caret">|</span></div>
+                    </div>
+                    <p class="scene-caption">One tag, the same everywhere · 15.4 KB gzipped · zero dependencies</p>
+                    <svg class="pointer" data-el="ptr" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path class="pointer__shape" d="M4 2l16 9-7 2-3 7z"/></svg>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <button type="button" class="btn feature-panel__pause" id="pause-animations" aria-pressed="false">Pause animations</button>
+        </div>
+      </div>
+    </section>
+
+    <section id="faq" class="faq wrap" aria-labelledby="faq-title">
+      <h2 id="faq-title">Questions</h2>
+      <!-- The chevron icon is from Lucide (https://lucide.dev), © Lucide Contributors, ISC license. -->
+      <div class="faq__list">
+        <details open>
+          <summary><span>Why this one, and not a ready-made snake component?</span><svg class="faq__chevron" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></summary>
+          <div class="faq__answer">
+            <p>Most snake components you can find are tied to one framework or site builder, bring a graphics library with them, or come with a look of their own that you can only recolor.</p>
+            <ul>
+              <li><strong>Any website.</strong> A Web Component, so it works without installing a framework.</li>
+              <li><strong>Your design, not ours.</strong> It reads your colors, sizes and fonts from CSS variables.</li>
+              <li><strong>Light.</strong> 15.4 KB gzipped, zero dependencies. Skins and leaderboard load only if you add them.</li>
+              <li><strong>Built to hide.</strong> Starts closed and opens from any trigger, which is what an easter egg needs.</li>
+              <li><strong>Accessible and open.</strong> Keyboard, touch and screen readers, under the MIT license.</li>
+            </ul>
+          </div>
+        </details>
+        <details>
+          <summary><span>Does it need React or another framework?</span><svg class="faq__chevron" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></summary>
+          <p class="faq__answer">No. It works in plain HTML, Astro, React, Vue, WordPress or anything that renders HTML.</p>
+        </details>
+        <details>
+          <summary><span>Can I make my own skin?</span><svg class="faq__chevron" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></summary>
+          <p class="faq__answer">Yes. Register a skin with a list of foods, a name for each one and an optional palette.</p>
+        </details>
+        <details>
+          <summary><span>Where do the scores go?</span><svg class="faq__chevron" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></summary>
+          <p class="faq__answer">With the leaderboard on, scores stay in the player's browser. For a global Top 10, point it to your own service. Only a username and a score are ever sent.</p>
+        </details>
+        <details>
+          <summary><span>Is it accessible?</span><svg class="faq__chevron" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></summary>
+          <p class="faq__answer">It plays with keyboard and touch, announces score and food to screen readers, and starts paused without animations when Reduce Motion is on.</p>
+        </details>
+        <details>
+          <summary><span>Can I use it in commercial work?</span><svg class="faq__chevron" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></summary>
+          <p class="faq__answer">Yes, under the MIT license. Keep the license notice that comes in the files.</p>
+        </details>
+      </div>
+    </section>
   </main>
-  <script>
-    // Works with or without the trailing slash: /snake-game, /snake-game/ and /snake-game/index.html all go to /snake-game/demo/.
-    (function () {
-      var path = location.pathname.replace(/index\.html$/, '');
-      if (path.slice(-1) !== '/') path += '/';
-      var target = path + 'demo/' + location.search + location.hash;
-      var link = document.getElementById('demo-link');
-      if (link) link.href = target;
-      location.replace(target);
-    })();
-  </script>
+
+  <footer class="site-footer wrap">
+    <span>snake-game · MIT · Made by Carolina Cajazeira (@akacaja)</span>
+    <nav aria-label="Project links">
+      <a href="https://github.com/akacaja/snake-game">GitHub</a>
+      <a href="demo/">Demo</a>
+      <a href="https://github.com/akacaja/snake-game/blob/main/CHANGELOG.md">Changelog</a>
+      <a href="https://github.com/akacaja/snake-game/blob/main/README.pt-BR.md" lang="pt-BR">Leia em português</a>
+    </nav>
+  </footer>
+
+  <script src="dist/snake-game.js"></script>
+  <script src="skins/natal.js"></script>
+  <script src="skins/halloween.js"></script>
+  <script src="skins/carnaval.js"></script>
+  <script src="addons/leaderboard.js"></script>
+  <script type="module" src="site/landing.js"></script>
 </body>
 </html>

@@ -1,6 +1,5 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import vm from 'node:vm';
 import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -13,8 +12,8 @@ const root = resolve(fileURLToPath(new URL('..', import.meta.url)));
 const read = (file) => readFileSync(join(root, file), 'utf8');
 
 const PAGES = ['index.html', 'demo/index.html', 'examples/module.html', 'examples/minimal.html'];
-const SCRIPTS = readdirSync(join(root, 'demo')).filter((f) => f.endsWith('.js')).map((f) => `demo/${f}`);
-const SKIP = /^(https?:|mailto:|data:|#|javascript:)/i;
+const SCRIPTS = ['demo', 'site'].flatMap((dir) => readdirSync(join(root, dir)).filter((f) => f.endsWith('.js')).map((f) => `${dir}/${f}`));
+const SKIP = /^(https?:|mailto:|data:|#|javascript:|\$\{)/i; // "${...}" is a generated address (checked in landing-config.test.js)
 
 // Finds src=, href=, import ... from, import '...', import('...') and url(...).
 export function findReferences(text) {
@@ -55,31 +54,4 @@ test('the check finds paths that start with "/" and paths to missing files', () 
   assert.equal(problemsIn('demo/index.html', bad).length, 2);
   assert.equal(problemsIn('demo/index.html', "import '/src/x.js'").length, 1);
   assert.equal(problemsIn('demo/index.html', '<script src="https://example.org/a.js"></script>').length, 0);
-});
-
-// The temporary root page: run its inline script with a fake location.
-function redirectFrom(pathname, search = '', hash = '') {
-  const html = read('index.html');
-  const script = html.match(/<script>([\s\S]*?)<\/script>/)[1];
-  const link = { href: '' };
-  let replaced = null;
-  const context = {
-    location: { pathname, search, hash, replace: (url) => { replaced = url; } },
-    document: { getElementById: (id) => (id === 'demo-link' ? link : null) },
-  };
-  vm.runInNewContext(script, context);
-  assert.equal(link.href, replaced, 'the visible link matches the redirect');
-  return replaced;
-}
-
-test('the root page sends /snake-game, /snake-game/ and /snake-game/index.html to /snake-game/demo/', () => {
-  assert.equal(redirectFrom('/snake-game'), '/snake-game/demo/');
-  assert.equal(redirectFrom('/snake-game/'), '/snake-game/demo/');
-  assert.equal(redirectFrom('/snake-game/index.html'), '/snake-game/demo/');
-});
-
-test('the root page sends / and /index.html to /demo/, keeping ?query and #hash', () => {
-  assert.equal(redirectFrom('/'), '/demo/');
-  assert.equal(redirectFrom('/index.html'), '/demo/');
-  assert.equal(redirectFrom('/snake-game/', '?a=1', '#x'), '/snake-game/demo/?a=1#x');
 });

@@ -2,6 +2,23 @@
 
 All notable changes to this project are listed here. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project uses [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+### Added
+
+- A landing page at the site root (`index.html` + `site/`), in English: a playground with the real game (skin, grid, snake, gap, colors, walls, intro, speed and leaderboard), the code ready to paste (HTML, CSS tokens and a prompt for AI) with Copy and Copy link, six animated feature illustrations, a FAQ and a footer. It uses no dependencies, and the page itself has no build step (it loads the built `dist/`); the only external request is the page fonts.
+- `site/config.js` and `site/scenes.js`: pure modules (no DOM) with the code generator, the share link and the illustration frames, with tests.
+- `site/landing.js` (playground and code panel), `site/features.js` (feature list and illustrations) and `site/landing.css` (the landing page's only colors and sizes).
+
+### Changed
+
+- `npm run serve:pages` and `node scripts/serve.js` list the landing page first, then the demo.
+- The READMEs point to the landing page and to the demo.
+
+### Removed
+
+- The temporary redirect from `index.html` to `demo/`. The demo stays at `demo/`.
+
 ## [0.3.1] - 2026-11-25
 
 ### Fixed
@@ -87,7 +104,6 @@ All notable changes to this project are listed here. The format follows [Keep a 
 
 ## Next steps
 
-- A landing page at the site root will replace the temporary redirect in `index.html`.
 - The leaderboard server (global ranking), following `docs/leaderboard-api.md`.
 - A way to recover a name when its key is lost (browser data cleared, another device).
 - See the Top 10 without playing.

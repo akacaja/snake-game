@@ -41,14 +41,14 @@ test('lanAddresses keeps only external IPv4, without repeats', () => {
   assert.deepEqual(lanAddresses({}), []);
 });
 
-test('serverUrls', () => {
+test('serverUrls lists the landing page first, then the demo', () => {
   const plain = serverUrls({ port: 8000, base: '', addresses: ['192.168.0.12'] });
-  assert.deepEqual(plain.local, ['http://localhost:8000/demo/', 'http://localhost:8000/examples/module.html']);
-  assert.deepEqual(plain.network, ['http://192.168.0.12:8000/demo/']);
+  assert.deepEqual(plain.local, ['http://localhost:8000/', 'http://localhost:8000/demo/', 'http://localhost:8000/examples/module.html']);
+  assert.deepEqual(plain.network, ['http://192.168.0.12:8000/', 'http://192.168.0.12:8000/demo/']);
   const sub = serverUrls({ port: 8000, base: '/snake-game', addresses: ['192.168.0.12'] });
+  assert.equal(sub.local[0], 'http://localhost:8000/snake-game/');
   assert.ok(sub.local.includes('http://localhost:8000/snake-game/demo/'));
-  assert.ok(sub.local.includes('http://localhost:8000/snake-game'));
-  assert.deepEqual(sub.network, ['http://192.168.0.12:8000/snake-game/demo/']);
+  assert.deepEqual(sub.network, ['http://192.168.0.12:8000/snake-game/', 'http://192.168.0.12:8000/snake-game/demo/']);
   assert.deepEqual(serverUrls({ port: 8000 }).network, []);
 });
 

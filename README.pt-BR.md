@@ -2,7 +2,7 @@
 
 [English](README.md)
 
-Demo ao vivo: https://akacaja.github.io/snake-game/demo/
+Landing page com playground: https://akacaja.github.io/snake-game/ · Demo ao vivo: https://akacaja.github.io/snake-game/demo/
 
 Um jogo da cobrinha como web component. Adicione um script, adicione uma tag e o jogo aparece. Sem dependências, sem framework.
 
@@ -302,7 +302,7 @@ Pelo arquivo único é `SnakeGame.createEngine(...)`. O global `SnakeGame` tamb�
 ```sh
 npm test                 # testes automáticos (Node, sem dependências)
 npm run build            # gera de novo o dist/snake-game.js, addons/ e skins/
-node scripts/serve.js    # http://localhost:8000/demo/ e /examples/module.html
+node scripts/serve.js    # landing em http://localhost:8000/, demo em /demo/ e /examples/module.html
 npm run serve:pages      # o mesmo, dentro de /snake-game/ como no GitHub Pages
 ```
 

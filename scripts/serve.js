@@ -1,10 +1,10 @@
 // Tiny static file server (Node only, no dependencies).
 // Usage: node scripts/serve.js [port] [--base /subfolder/]
-//   node scripts/serve.js                       ->  http://localhost:8000/demo/
+//   node scripts/serve.js                       ->  http://localhost:8000/ (landing page) and /demo/
 //   node scripts/serve.js 8001                  ->  another port
-//   node scripts/serve.js --base /snake-game/   ->  http://localhost:8000/snake-game/demo/
+//   node scripts/serve.js --base /snake-game/   ->  http://localhost:8000/snake-game/ (landing page) and /snake-game/demo/
 //                                                   (simulates GitHub Pages, which serves the site in a subfolder)
-// It also prints the address on your network, to open the demo on a phone on the same Wi-Fi.
+// It also prints the address on your network, to open the landing page on a phone on the same Wi-Fi.
 import { createServer } from 'node:http';
 import { readFile, stat } from 'node:fs/promises';
 import { networkInterfaces } from 'node:os';
@@ -62,10 +62,10 @@ export function lanAddresses(interfaces = networkInterfaces()) {
   return found;
 }
 
+// The landing page (the site root) comes first, then the demo.
 export function serverUrls({ port, base = '', addresses = [] }) {
-  const local = [`http://localhost:${port}${base}/demo/`, `http://localhost:${port}${base}/examples/module.html`];
-  if (base) local.push(`http://localhost:${port}${base}`);
-  const network = addresses.map((ip) => `http://${ip}:${port}${base}/demo/`);
+  const local = [`http://localhost:${port}${base}/`, `http://localhost:${port}${base}/demo/`, `http://localhost:${port}${base}/examples/module.html`];
+  const network = addresses.flatMap((ip) => [`http://${ip}:${port}${base}/`, `http://${ip}:${port}${base}/demo/`]);
   return { local, network };
 }
 

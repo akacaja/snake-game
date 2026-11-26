@@ -4,17 +4,12 @@ import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
 import { dirname, join, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { TOKEN_DEFS } from '../src/theme.js';
+import { LITERALS } from './literals.js';
 
 const root = resolve(fileURLToPath(new URL('..', import.meta.url)));
 const read = (file) => readFileSync(join(root, file), 'utf8');
 
 const DRAWING_FILES = ['src/renderers.js', 'src/snake-game.js', 'src/read-tokens.js', 'src/text.js', 'src/geometry.js', 'src/skins.js'];
-const LITERALS = [
-  [/#[0-9a-fA-F]{3,8}\b/, 'hex color'],
-  [/\b(rgb|rgba|hsl|hsla|hwb|lab|lch|oklab|oklch)\s*\(/i, 'color function'],
-  [/\b\d+(\.\d+)?\s*px\b/i, 'size in px'],
-  [/\b(transparent|black|white|red|green|blue|gray|grey|orange|yellow|purple|pink|brown|cyan|magenta|silver|gold|navy|teal)\b/i, 'color name'],
-];
 
 // Addons draw too (the leaderboard has a form and a list): they may only use the game tokens, as var(--_*).
 // Both the source (src/addons) and the generated file (addons) are checked.
@@ -108,11 +103,4 @@ test('demo and module pages point rel="icon" to a file that exists', () => {
     assert.ok(href, `${page} has no rel="icon"`);
     assert.ok(existsSync(resolve(root, dirname(page), href)), `${page}: ${href} does not exist`);
   }
-});
-
-test('the temporary root page has no styles or literal colors/sizes', () => {
-  const html = read('index.html');
-  assert.ok(!/<style/i.test(html), 'index.html has a <style> tag');
-  assert.ok(!/\sstyle=/i.test(html), 'index.html has a style attribute');
-  for (const [re, what] of LITERALS) assert.ok(!re.test(html), `index.html has a ${what}`);
 });
