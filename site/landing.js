@@ -1,10 +1,11 @@
-// The playground (a real <snake-game> next to the settings) and the code panel of the landing page.
+// The playground (a real <snake-game> next to the settings) and the code drawer of the landing page.
 // The preview and the generated code both read the same state through config.js, so they always agree.
 // All colors and sizes live in site/landing.css; this file only moves values around.
 import {
   ATTRIBUTE_NAMES, COLOR_KEYS, FORMATS, TOKEN_NAMES, attributesFor, fromQuery, normalizeHex,
   summary, toQuery, tokensFor, withSkin,
 } from './config.js';
+import { initDrawer } from './drawer.js';
 import { initFeatures } from './features.js';
 
 const $ = (selector, root = document) => root.querySelector(selector);
@@ -18,7 +19,11 @@ const gapInput = $('#gap');
 const gapOutput = $('#gap-output');
 const codeEl = $('#code');
 const summaryEl = $('#summary');
-const statusEl = $('#copy-status');
+const drawerEl = $('#code-drawer');
+const toastEl = $('#toast');
+const toastText = $('#toast-text');
+const linkFallback = $('#link-fallback');
+const linkField = $('#link-field');
 
 let state = fromQuery(location.search);
 let format = 'html';
@@ -202,6 +207,7 @@ function renderChoices() {
   for (const button of $$('button[data-group]', settings)) {
     button.setAttribute('aria-pressed', String(state[button.dataset.group] === button.dataset.value));
   }
+  for (const select of $$('select[data-setting]', settings)) select.value = state[select.dataset.setting];
   gapInput.value = String(state.gap);
   gapOutput.textContent = `${state.gap} px`;
 }
@@ -229,6 +235,7 @@ function renderColors() {
 }
 
 function renderCode() {
+  if (!linkFallback.hidden) linkField.value = shareLink(); // the link in the field follows the setup
   codeEl.textContent = FORMATS.find((f) => f.id === format).make(state);
   for (const tab of $$('[data-format]')) tab.setAttribute('aria-pressed', String(tab.dataset.format === format));
   summaryEl.replaceChildren(...summary(state).map((text) => {
@@ -263,6 +270,12 @@ settings.addEventListener('click', (event) => {
   if (button) choose(button.dataset.group, button.dataset.value);
 });
 
+// The menus (Grid, Snake, Walls, Intro, Speed, Leaderboard). "change" fires when the choice is made; on a phone, when the list closes.
+settings.addEventListener('change', (event) => {
+  const select = event.target.closest('select[data-setting]');
+  if (select) choose(select.dataset.setting, select.value);
+});
+
 gapInput.addEventListener('input', () => {
   state = { ...state, gap: Number(gapInput.value) };
   applyState();
@@ -286,7 +299,50 @@ for (const input of $$('[data-color]')) {
 // The "Seasonal skins" scene in the features section has real buttons that set the skin here.
 document.addEventListener('landing-pick-skin', (event) => choose('skin', event.detail.skin));
 
-// ---- code panel ------------------------------------------------------------------------
+// ---- copy message (toast) --------------------------------------------------------------
+
+const TOAST_MS = 2600;
+const TOAST_ERROR_MS = 6000; // an error stays longer: there is something to do next
+const TOAST_TEXT = {
+  code: 'Code copied and ready to use!',
+  link: 'Link copied. It opens this exact setup.',
+  failed: "Couldn't copy. Select the text and copy it manually.",
+};
+let toastTimer = 0;
+
+function hideToast() {
+  clearTimeout(toastTimer);
+  toastEl.hidden = true;
+  toastText.textContent = '';
+}
+
+// The text is emptied, then written about 50 ms later, so a screen reader announces it even when the same message repeats.
+function showToast(kind, text) {
+  hideToast();
+  toastTimer = setTimeout(() => {
+    toastEl.dataset.kind = kind;
+    toastText.textContent = text;
+    toastEl.hidden = false;
+    toastTimer = setTimeout(hideToast, kind === 'error' ? TOAST_ERROR_MS : TOAST_MS);
+  }, 50);
+}
+
+function hideLinkFallback() {
+  linkFallback.hidden = true;
+  linkField.value = '';
+}
+
+// ---- code drawer -----------------------------------------------------------------------
+
+initDrawer({
+  drawer: drawerEl,
+  opener: $('#get-code'),
+  closeButton: $('#drawer-close'),
+  onClose: () => {
+    hideToast();
+    hideLinkFallback();
+  },
+});
 
 for (const tab of $$('[data-format]')) {
   tab.addEventListener('click', () => {
@@ -295,66 +351,58 @@ for (const tab of $$('[data-format]')) {
   });
 }
 
-function announce(message) {
-  statusEl.textContent = '';
-  setTimeout(() => { statusEl.textContent = message; }, 50);
-}
-
-// Tries, in order: the Clipboard API, a hidden textarea with execCommand, then selecting the text for the person.
-async function copyText(text, selectable) {
+// Tries, in order: the Clipboard API, then a hidden textarea with execCommand. When both fail, the caller selects the text.
+async function copyText(text) {
   try {
     await navigator.clipboard.writeText(text);
-    return 'copied';
+    return true;
   } catch { /* not allowed here (for example a phone opening the page by IP): try the next way */ }
   try {
     const area = document.createElement('textarea');
     area.value = text;
     area.setAttribute('readonly', '');
     area.className = 'visually-hidden';
-    document.body.append(area);
+    drawerEl.append(area); // inside the drawer, so the focus never leaves it
     area.select();
     const done = document.execCommand('copy');
     area.remove();
-    if (done) return 'copied';
+    if (done) return true;
   } catch { /* ignore */ }
-  if (selectable) {
-    getSelection().selectAllChildren(selectable);
-    return 'select';
-  }
-  return 'failed';
+  return false;
 }
 
-// The button says "Copied" for 2 seconds.
-function flash(button, label) {
-  if (button.dataset.label === undefined) button.dataset.label = button.textContent;
-  button.textContent = label;
-  clearTimeout(button.flashTimer);
-  button.flashTimer = setTimeout(() => { button.textContent = button.dataset.label; }, 2000);
+function shareLink() {
+  const query = toQuery(state);
+  return `${location.origin}${location.pathname}${query ? `?${query}` : ''}`;
 }
 
 $('#copy-code').addEventListener('click', async (event) => {
   const button = event.currentTarget; // currentTarget is gone after an await
-  const result = await copyText(codeEl.textContent, codeEl);
-  if (result === 'copied') {
-    flash(button, 'Copied');
-    announce('Code copied');
+  const copied = await copyText(codeEl.textContent);
+  if (document.activeElement !== button) button.focus({ preventScroll: true }); // the fallback textarea took the focus
+  if (copied) {
+    showToast('ok', TOAST_TEXT.code);
   } else {
-    flash(button, 'Press ⌘C / Ctrl+C');
-    announce('Press Command C or Control C to copy the selected code');
-    button.focus({ preventScroll: true }); // the selection moved the focus into the code
+    getSelection().selectAllChildren(codeEl); // the code is selected, ready for Command C or Control C
+    showToast('error', TOAST_TEXT.failed);
   }
 });
 
 $('#copy-link').addEventListener('click', async (event) => {
   const button = event.currentTarget;
-  const query = toQuery(state);
-  const link = `${location.origin}${location.pathname}${query ? `?${query}` : ''}`;
-  const result = await copyText(link);
-  if (result === 'copied') {
-    flash(button, 'Copied');
-    announce('Link copied');
+  const link = shareLink();
+  const copied = await copyText(link);
+  if (copied) {
+    hideLinkFallback();
+    if (document.activeElement !== button) button.focus({ preventScroll: true });
+    showToast('ok', TOAST_TEXT.link);
   } else {
-    prompt('Copy this link', link);
+    linkField.value = link;
+    linkFallback.hidden = false;
+    linkField.focus({ preventScroll: true });
+    linkField.select();
+    linkField.setSelectionRange(0, link.length); // some phones ignore select() alone
+    showToast('error', TOAST_TEXT.failed);
   }
 });
 

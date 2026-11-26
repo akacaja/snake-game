@@ -2,6 +2,8 @@
 // The illustrations are plain HTML in index.html; scenes.js says what each element shows at each tick,
 // and this file applies it. Nothing runs unless it can be seen: reduced motion, a hidden tab, a section off
 // screen and the "Pause animations" button all stop it (and the single requestAnimationFrame loop with it).
+// When the list and the panel are stacked in one column (a phone, a narrow window), the panel moves to sit right
+// under the description of the open item; side by side it stays in its own column, next to the list.
 import { SCENES, SKIN_IDS, TICK_MS } from './scenes.js';
 
 const ITEM_MS = 10000;
@@ -15,6 +17,11 @@ export function initFeatures() {
   const stage = section.querySelector('.feature-panel__stage');
   const pauseButton = section.querySelector('#pause-animations');
   const reduceQuery = matchMedia('(prefers-reduced-motion: reduce)');
+  const panel = section.querySelector('.feature-panel');
+  const list = section.querySelector('.feature-list');
+  // The width where the two columns stop fitting is a CSS variable (landing.css), so this file has no sizes.
+  const stackedWidth = getComputedStyle(document.documentElement).getPropertyValue('--features-stacked-max').trim();
+  const stackedQuery = matchMedia(stackedWidth ? `(max-width: ${stackedWidth})` : 'not all');
 
   // For each scene: its elements by data-el, and the last patch written to each (to write only what changed).
   const views = sceneEls.map((el) => ({
@@ -102,6 +109,20 @@ export function initFeatures() {
     }
   }
 
+  // ---- where the panel sits ----------------------------------------------------------------
+
+  // Stacked: inside the <li> of the open item, after its description. Side by side: back after the list.
+  // Moving a node drops the focus it holds (the "Pause animations" button, for one), so the focus is given back.
+  function placePanel() {
+    const held = panel.contains(document.activeElement) ? document.activeElement : null;
+    if (stackedQuery.matches) {
+      if (panel.parentElement !== items[index]) items[index].append(panel);
+    } else if (panel.previousElementSibling !== list) {
+      list.after(panel);
+    }
+    if (held && document.activeElement !== held) held.focus({ preventScroll: true });
+  }
+
   // ---- the accordion ---------------------------------------------------------------------
 
   function show(next) {
@@ -118,6 +139,7 @@ export function initFeatures() {
     items[index].querySelector('.feature__body').hidden = true;
 
     index = next;
+    placePanel();
     const now = views[index];
     now.last.clear();
     now.el.hidden = false;
@@ -144,7 +166,8 @@ export function initFeatures() {
     const button = item.querySelector('.feature__button');
     // Hover picks the item; a click picks it again, even the open one, and starts it over.
     button.addEventListener('pointerenter', (event) => {
-      if (event.pointerType === 'mouse' && i !== index) show(i);
+      // Stacked, the layout moves under the pointer when an item opens, so hovering would open item after item.
+      if (event.pointerType === 'mouse' && i !== index && !stackedQuery.matches) show(i);
     });
     button.addEventListener('click', () => show(i));
   });
@@ -188,6 +211,8 @@ export function initFeatures() {
   };
   section.addEventListener('focusin', checkFocus);
   section.addEventListener('focusout', () => setTimeout(checkFocus, 0));
+
+  stackedQuery.addEventListener('change', placePanel);
 
   reduceQuery.addEventListener('change', (event) => {
     reduce = event.matches;
